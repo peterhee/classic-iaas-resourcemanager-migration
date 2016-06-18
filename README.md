@@ -1,6 +1,6 @@
 Hello Azure expert!
 
-This repo provides a set of tool to help you migrate resources from Azure Service Manager to Azure Resource Manager.
+This repo provides a set of tools to help you migrate resources from Azure Service Manager to Azure Resource Manager.
 
 # ASM2ARM
 
