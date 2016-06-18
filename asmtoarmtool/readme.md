@@ -170,3 +170,19 @@ Planning and testing are key for a successful migration. The tool enables you to
 It’s entirely possible that you opt for a full redeployment of the solution during the migration to ARM environment. The tool can help you to setup a new environment with similar configuration but with new and empty virtual machines.
 
 Use “Build empty environment” option to enable this.
+
+## Notes
+
+### Storage account names
+As the Storage Accounts supports a maximum of 24 characters in the name, and the tool adds the "uniqueness string" in the target Storage Account name, it is possible that the deployment fails if the name exceeds the limit. In such cases you need to modify the export.JSON and copyblobdetails.JSON to make it 24 characters. This is also true if the target Storage Account name is already in use.
+
+### Troubleshooting
+The detailed logs and output of the REST API are captured in the location %USERPROFILE%\appdata\Local with the file name ASMtoARMTool-<YYYYMMDD>.log and ASMtoARMTool-XML-<YYYYMMDD>.log.
+In case of any issues during the deployment of the Export.JSON you need to troubleshoot the template properties and fix the invalid entries. Report any issue on the tool site.
+
+## Known Issues
+Issue #1: If there are more than one Availability set in a Cloud Service then the ARM deployment fails with the below error message.
+
+Error: “Microsoft.Compute/virtualMachines/<VM Name> is using different Availability Set than other Virtual Machines connected to the Load Balancer(s) <VM Name>”
+
+Workaround: As ARM does not support multiple Availability sets under a single Load Balancer we need to use single availability set for all the VM’s or we need to have a separate Load Balancer for each Availability Set.
