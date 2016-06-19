@@ -1,7 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Dynamic;
 
-namespace ARMResources
+namespace ASMtoARMTool.Classes.ARM
 {
     public class VirtualNetworkGateway : Resource
     {
@@ -356,7 +357,7 @@ namespace ARMResources
 
     public class OsProfile
     {
-        public string computername;
+        public string computerName;
         public string adminUsername;
         public string adminPassword;
     }
@@ -442,36 +443,17 @@ namespace ARMResources
         public object properties;
     }
 
+    public class Parameter
+    {
+        public string type;
+    }
+
     public class Template
     {
         public string schemalink = "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#";
         public string contentVersion = "1.0.0.0";
-        public object parameters;
-        public Hashtable variables;
+        public Dictionary<string, Parameter> parameters;
+        public Dictionary<string, string> variables;
         public List<Resource> resources;
-    }
-
-    public class CopyBlobDetail
-    {
-        public string SourceSA;
-        public string SourceContainer;
-        public string SourceBlob;
-        public string SourceKey;
-        public string DestinationSA;
-        public string DestinationContainer;
-        public string DestinationBlob;
-        public string DestinationKey = "";
-        public string Status = "";
-        public long TotalBytes = 0;
-        public long BytesCopied = 0;
-        public string StartTime = "";
-        public string EndTime = "";
-    }
-
-    public class TelemetryRecord
-    {
-        public string TenantId;
-        public System.Guid SubscriptionId;
-        public Dictionary<string, string> ProcessedResources;
     }
 }

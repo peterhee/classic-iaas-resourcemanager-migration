@@ -46,5 +46,47 @@ namespace ASMtoARMTool {
                 this["TenantId"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("v2")]
+        public string UniquenessSuffix {
+            get {
+                return ((string)(this["UniquenessSuffix"]));
+            }
+            set {
+                this["UniquenessSuffix"] = value;
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1950a258-227b-4e31-a9cf-717495945fc2")]
+        public string ClientId {
+            get {
+                return ((string)(this["ClientId"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("urn:ietf:wg:oauth:2.0:oob")]
+        public string ReturnURL {
+            get {
+                return ((string)(this["ReturnURL"]));
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool BuildEmpty {
+            get {
+                return ((bool)(this["BuildEmpty"]));
+            }
+            set {
+                this["BuildEmpty"] = value;
+            }
+        }
     }
 }

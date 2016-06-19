@@ -29,13 +29,8 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Window));
-            this.txtTenantID = new System.Windows.Forms.TextBox();
             this.lblTenantID = new System.Windows.Forms.Label();
             this.btnGetToken = new System.Windows.Forms.Button();
-            this.lblClientID = new System.Windows.Forms.Label();
-            this.txtClientID = new System.Windows.Forms.TextBox();
-            this.lblReturnURLs = new System.Windows.Forms.Label();
-            this.txtReturnURLs = new System.Windows.Forms.TextBox();
             this.lblToken = new System.Windows.Forms.Label();
             this.gridVirtualNetworks = new System.Windows.Forms.DataGridView();
             this.colVirtualNetwork = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -53,22 +48,15 @@
             this.folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.lblStatus = new System.Windows.Forms.ToolStripStatusLabel();
-            this.chkAllowTelemetry = new System.Windows.Forms.CheckBox();
             this.cmbSubscriptions = new System.Windows.Forms.ComboBox();
             this.lblSubscriptions = new System.Windows.Forms.Label();
+            this.txtTenantID = new System.Windows.Forms.TextBox();
+            this.btnOptions = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.gridVirtualNetworks)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridStorageAccounts)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridVirtualMachines)).BeginInit();
             this.statusStrip1.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // txtTenantID
-            // 
-            this.txtTenantID.Location = new System.Drawing.Point(135, 21);
-            this.txtTenantID.Name = "txtTenantID";
-            this.txtTenantID.Size = new System.Drawing.Size(213, 20);
-            this.txtTenantID.TabIndex = 0;
-            this.txtTenantID.Text = "<domain>.onmicrosoft.com";
             // 
             // lblTenantID
             // 
@@ -88,44 +76,6 @@
             this.btnGetToken.Text = "Get Subscriptions";
             this.btnGetToken.UseVisualStyleBackColor = true;
             this.btnGetToken.Click += new System.EventHandler(this.btnGetToken_Click);
-            // 
-            // lblClientID
-            // 
-            this.lblClientID.AutoSize = true;
-            this.lblClientID.Location = new System.Drawing.Point(643, 47);
-            this.lblClientID.Name = "lblClientID";
-            this.lblClientID.Size = new System.Drawing.Size(47, 13);
-            this.lblClientID.TabIndex = 4;
-            this.lblClientID.Text = "Client ID";
-            this.lblClientID.Visible = false;
-            // 
-            // txtClientID
-            // 
-            this.txtClientID.Location = new System.Drawing.Point(757, 44);
-            this.txtClientID.Name = "txtClientID";
-            this.txtClientID.Size = new System.Drawing.Size(213, 20);
-            this.txtClientID.TabIndex = 3;
-            this.txtClientID.Text = "1950a258-227b-4e31-a9cf-717495945fc2";
-            this.txtClientID.Visible = false;
-            // 
-            // lblReturnURLs
-            // 
-            this.lblReturnURLs.AutoSize = true;
-            this.lblReturnURLs.Location = new System.Drawing.Point(643, 60);
-            this.lblReturnURLs.Name = "lblReturnURLs";
-            this.lblReturnURLs.Size = new System.Drawing.Size(69, 13);
-            this.lblReturnURLs.TabIndex = 6;
-            this.lblReturnURLs.Text = "Return URLs";
-            this.lblReturnURLs.Visible = false;
-            // 
-            // txtReturnURLs
-            // 
-            this.txtReturnURLs.Location = new System.Drawing.Point(757, 57);
-            this.txtReturnURLs.Name = "txtReturnURLs";
-            this.txtReturnURLs.Size = new System.Drawing.Size(213, 20);
-            this.txtReturnURLs.TabIndex = 5;
-            this.txtReturnURLs.Text = "urn:ietf:wg:oauth:2.0:oob";
-            this.txtReturnURLs.Visible = false;
             // 
             // lblToken
             // 
@@ -290,7 +240,7 @@
             // 
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.lblStatus});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 565);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 553);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Size = new System.Drawing.Size(970, 22);
             this.statusStrip1.TabIndex = 29;
@@ -301,19 +251,6 @@
             this.lblStatus.Name = "lblStatus";
             this.lblStatus.Size = new System.Drawing.Size(39, 17);
             this.lblStatus.Text = "Ready";
-            // 
-            // chkAllowTelemetry
-            // 
-            this.chkAllowTelemetry.AutoSize = true;
-            this.chkAllowTelemetry.Checked = true;
-            this.chkAllowTelemetry.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.chkAllowTelemetry.Location = new System.Drawing.Point(101, 542);
-            this.chkAllowTelemetry.Name = "chkAllowTelemetry";
-            this.chkAllowTelemetry.Size = new System.Drawing.Size(144, 17);
-            this.chkAllowTelemetry.TabIndex = 31;
-            this.chkAllowTelemetry.Text = "Allow telemetry collection";
-            this.chkAllowTelemetry.UseVisualStyleBackColor = true;
-            this.chkAllowTelemetry.CheckedChanged += new System.EventHandler(this.chkAllowTelemetry_CheckedChanged);
             // 
             // cmbSubscriptions
             // 
@@ -336,14 +273,33 @@
             this.lblSubscriptions.TabIndex = 33;
             this.lblSubscriptions.Text = "Subscriptions";
             // 
+            // txtTenantID
+            // 
+            this.txtTenantID.DataBindings.Add(new System.Windows.Forms.Binding("Text", global::ASMtoARMTool.app.Default, "TenantId", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
+            this.txtTenantID.Location = new System.Drawing.Point(135, 21);
+            this.txtTenantID.Name = "txtTenantID";
+            this.txtTenantID.Size = new System.Drawing.Size(213, 20);
+            this.txtTenantID.TabIndex = 0;
+            this.txtTenantID.Text = global::ASMtoARMTool.app.Default.TenantId;
+            // 
+            // btnOptions
+            // 
+            this.btnOptions.Location = new System.Drawing.Point(24, 50);
+            this.btnOptions.Name = "btnOptions";
+            this.btnOptions.Size = new System.Drawing.Size(129, 23);
+            this.btnOptions.TabIndex = 34;
+            this.btnOptions.Text = "Options...";
+            this.btnOptions.UseVisualStyleBackColor = true;
+            this.btnOptions.Click += new System.EventHandler(this.btnOptions_Click);
+            // 
             // Window
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(970, 587);
+            this.ClientSize = new System.Drawing.Size(970, 575);
+            this.Controls.Add(this.btnOptions);
             this.Controls.Add(this.lblSubscriptions);
             this.Controls.Add(this.cmbSubscriptions);
-            this.Controls.Add(this.chkAllowTelemetry);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.btnExport);
             this.Controls.Add(this.btnChoosePath);
@@ -353,15 +309,14 @@
             this.Controls.Add(this.gridStorageAccounts);
             this.Controls.Add(this.gridVirtualNetworks);
             this.Controls.Add(this.lblToken);
-            this.Controls.Add(this.lblReturnURLs);
-            this.Controls.Add(this.txtReturnURLs);
-            this.Controls.Add(this.lblClientID);
-            this.Controls.Add(this.txtClientID);
             this.Controls.Add(this.btnGetToken);
             this.Controls.Add(this.lblTenantID);
             this.Controls.Add(this.txtTenantID);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.MaximizeBox = false;
             this.Name = "Window";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "ASM to ARM Tool";
             this.Load += new System.EventHandler(this.Window_Load);
             ((System.ComponentModel.ISupportInitialize)(this.gridVirtualNetworks)).EndInit();
@@ -379,10 +334,6 @@
         private System.Windows.Forms.TextBox txtTenantID;
         private System.Windows.Forms.Label lblTenantID;
         private System.Windows.Forms.Button btnGetToken;
-        private System.Windows.Forms.Label lblClientID;
-        private System.Windows.Forms.TextBox txtClientID;
-        private System.Windows.Forms.Label lblReturnURLs;
-        private System.Windows.Forms.TextBox txtReturnURLs;
         private System.Windows.Forms.Label lblToken;
         private System.Windows.Forms.DataGridView gridVirtualNetworks;
         private System.Windows.Forms.DataGridView gridStorageAccounts;
@@ -400,9 +351,9 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn colVirtualMachine;
         private System.Windows.Forms.DataGridViewTextBoxColumn colDeploymentName;
         private System.Windows.Forms.DataGridViewTextBoxColumn colVirtualNetworkName;
-        private System.Windows.Forms.CheckBox chkAllowTelemetry;
         private System.Windows.Forms.ComboBox cmbSubscriptions;
         private System.Windows.Forms.Label lblSubscriptions;
+        private System.Windows.Forms.Button btnOptions;
     }
 }
 

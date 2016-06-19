@@ -5,10 +5,14 @@ using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using System.Net;
 using System.IO;
 using System.Xml;
-using ARMResources;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.Text;
+using System.Reflection;
+using ASMtoARMTool.Classes;
+using ASMtoARMTool.Classes.ARM;
+using System.Dynamic;
+using System.Data.SqlClient;
 
 namespace ASMtoARMTemplate
 {
@@ -16,6 +20,7 @@ namespace ASMtoARMTemplate
     {
         private string subscriptionid;
         List<Resource> resources;
+        Dictionary<string, Parameter> parameters;
         public List<CopyBlobDetail> copyblobdetails;
         Dictionary<string, string> processeditems;
 
@@ -28,8 +33,8 @@ namespace ASMtoARMTemplate
         {
             writeLog("Window_Load", "Program start");
 
-            txtTenantID.Text = ASMtoARMTool.app.Default.TenantId;
-            chkAllowTelemetry.Checked = ASMtoARMTool.app.Default.AllowTelemetry;
+            this.Text = "ASM to ARM Tool (" + Assembly.GetEntryAssembly().GetName().Version.ToString() + ")";
+            NewVersionAvailable(); // check if there a new version of the app
         }
 
         private void btnGetToken_Click(object sender, EventArgs e)
@@ -51,7 +56,7 @@ namespace ASMtoARMTemplate
                 AuthenticationContext context = new AuthenticationContext("https://login.windows.net/" + txtTenantID.Text);
 
                 AuthenticationResult result = null;
-                result = context.AcquireToken("https://management.core.windows.net/", txtClientID.Text, new Uri(txtReturnURLs.Text), PromptBehavior.Always);
+                result = context.AcquireToken("https://management.core.windows.net/", ASMtoARMTool.app.Default.ClientId, new Uri(ASMtoARMTool.app.Default.ReturnURL), PromptBehavior.Always);
                 if (result == null)
                 {
                     throw new InvalidOperationException("Failed to obtain the token");
@@ -154,9 +159,12 @@ namespace ASMtoARMTemplate
                     break;
                 case "VirtualMachine":
                     url = "https://management.core.windows.net/" + subscriptionid + "/services/hostedservices/" + info["cloudservicename"] + "/deployments/" + info["deploymentname"] + "/roles/" + info["virtualmachinename"];
-                    //node = "PersistentVMRole";
                     node = "";
                     lblStatus.Text = "BUSY: Getting Virtual Machines for Cloud Service : " + info["virtualmachinename"] + "...";
+                    break;
+                case "VMImages":
+                    url = "https://management.core.windows.net/" + subscriptionid + "/services/images";
+                    node = "Images/OSImage";
                     break;
             }
 
@@ -229,7 +237,6 @@ namespace ASMtoARMTemplate
                 gridVirtualMachines.Rows.Clear();
 
                 // Get Subscription from ComboBox
-                //subscriptionid = gridSubscriptions.SelectedRows[0].Cells["SubscriptionID"].Value.ToString();
                 subscriptionid = cmbSubscriptions.SelectedItem.ToString().Split(new char[] {'|'})[0].ToString().Trim();
 
                 foreach (XmlNode virtualnetworksite in GetAzureASMResources("VirtualNetworks", null))
@@ -319,6 +326,8 @@ namespace ASMtoARMTemplate
             writeLog("Export_Click", "Start");
 
             resources = new List<Resource>();
+            parameters = new Dictionary<string, Parameter>();
+
             processeditems = new Dictionary<string, string>();
             copyblobdetails = new List<CopyBlobDetail>();
 
@@ -409,6 +418,7 @@ namespace ASMtoARMTemplate
 
             Template template = new Template();
             template.resources = resources;
+            template.parameters = parameters;
 
             // save JSON template
             string jsontext = JsonConvert.SerializeObject(template, Newtonsoft.Json.Formatting.Indented, new JsonSerializerSettings { NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore });
@@ -422,7 +432,7 @@ namespace ASMtoARMTemplate
             writeLog("Export_Click", "Write file copyblobdetails.json");
 
             // post Telemetry Record to ASMtoARMToolAPI
-            if (chkAllowTelemetry.Checked)
+            if (ASMtoARMTool.app.Default.AllowTelemetry)
             {
                 postTelemetryRecord();
             }
@@ -465,7 +475,7 @@ namespace ASMtoARMTemplate
             string publicipaddress_name = resource.SelectSingleNode("ServiceName").InnerText;
 
             Hashtable dnssettings = new Hashtable();
-            dnssettings.Add("domainNameLabel", (publicipaddress_name + "v2").ToLower());
+            dnssettings.Add("domainNameLabel", (publicipaddress_name + ASMtoARMTool.app.Default.UniquenessSuffix).ToLower());
 
             PublicIPAddress_Properties publicipaddress_properties = new PublicIPAddress_Properties();
             publicipaddress_properties.dnsSettings = dnssettings;
@@ -1356,62 +1366,104 @@ namespace ASMtoARMTemplate
 
             string virtualmachinename = virtualmachineinfo["virtualmachinename"].ToString();
             string networkinterfacename = virtualmachinename;
+            string ostype = resource.SelectSingleNode("OSVirtualHardDisk/OS").InnerText;
 
             XmlNode osvirtualharddisk = resource.SelectSingleNode("OSVirtualHardDisk");
             string olddiskurl = osvirtualharddisk.SelectSingleNode("MediaLink").InnerText;
             string[] splitarray = olddiskurl.Split(new char[] { '/', '.' });
             string oldstorageaccountname = splitarray[2];
-            string newstorageaccountname = oldstorageaccountname + "v2";
+            string newstorageaccountname = oldstorageaccountname + ASMtoARMTool.app.Default.UniquenessSuffix;
             string newdiskurl = olddiskurl.Replace(oldstorageaccountname, newstorageaccountname);
 
             Hashtable storageaccountdependencies = new Hashtable();
             storageaccountdependencies.Add(newstorageaccountname, "");
 
-            // Block of code to help copying the blobs to the new storage accounts
-            Hashtable storageaccountinfo = new Hashtable();
-            storageaccountinfo.Add("name", oldstorageaccountname);
-
-            XmlNode storageaccountkeys = GetAzureASMResources("StorageAccountKeys", storageaccountinfo)[0];
-            string key = storageaccountkeys.SelectSingleNode("StorageServiceKeys/Primary").InnerText;
-
-            CopyBlobDetail copyblobdetail = new CopyBlobDetail();
-            copyblobdetail.SourceSA = oldstorageaccountname;
-            copyblobdetail.SourceContainer = splitarray[7];
-            copyblobdetail.SourceBlob = splitarray[8] + "." + splitarray[9];
-            copyblobdetail.SourceKey = key;
-            copyblobdetail.DestinationSA = newstorageaccountname;
-            copyblobdetail.DestinationContainer = splitarray[7];
-            copyblobdetail.DestinationBlob = splitarray[8] + "." + splitarray[9];
-            copyblobdetails.Add(copyblobdetail);
-            // end of block of code to help copying the blobs to the new storage accounts
-
             HardwareProfile hardwareprofile = new HardwareProfile();
             hardwareprofile.vmSize = GetVMSize(resource.SelectSingleNode("RoleSize").InnerText);
 
-            //OsProfile osprofile = new OsProfile();
-            //osprofile.computername = virtualmachinename;
-            //osprofile.adminUsername = "[parameters('adminUsername')]";
-            //osprofile.adminPassword = "[parameters('adminPassword')]";
-
-
             NetworkProfile networkprofile = new NetworkProfile();
             networkprofile.networkInterfaces = networkinterfaces;
-
-            //ImageReference imagereference = new ImageReference();
-            //imagereference.publisher = "MicrosoftWindowsServer";
-            //imagereference.offer = "WindowsServer";
-            //imagereference.sku = "2012-R2-Datacenter";
-            //imagereference.version = "latest";
 
             Vhd vhd = new Vhd();
             vhd.uri = newdiskurl;
 
             OsDisk osdisk = new OsDisk();
             osdisk.name = resource.SelectSingleNode("OSVirtualHardDisk/DiskName").InnerText;
-            osdisk.osType = resource.SelectSingleNode("OSVirtualHardDisk/OS").InnerText;
             osdisk.vhd = vhd;
             osdisk.caching = resource.SelectSingleNode("OSVirtualHardDisk/HostCaching").InnerText;
-            osdisk.createOption = "Attach"; // FromImage or Attach
+
+            ImageReference imagereference = new ImageReference();
+            OsProfile osprofile = new OsProfile();
+
+            // if the tool is configured to create new VMs with empty data disks
+            if (ASMtoARMTool.app.Default.BuildEmpty)
+            {
+                osdisk.createOption = "FromImage";
+
+                osprofile.computerName = virtualmachinename;
+                osprofile.adminUsername = "[parameters('adminUsername')]";
+                osprofile.adminPassword = "[parameters('adminPassword')]";
+
+                if (!parameters.ContainsKey("adminUsername"))
+                {
+                    Parameter parameter = new Parameter();
+                    parameter.type = "string";
+                    parameters.Add("adminUsername", parameter);
+                }
+
+                if (!parameters.ContainsKey("adminPassword"))
+                {
+                    Parameter parameter = new Parameter();
+                    parameter.type = "securestring";
+                    parameters.Add("adminPassword", parameter);
+                }
+
+                if (ostype == "Windows")
+                {
+                    imagereference.publisher = "MicrosoftWindowsServer";
+                    imagereference.offer = "WindowsServer";
+                    imagereference.sku = "2012-R2-Datacenter";
+                    imagereference.version = "latest";
+                }
+                else if (ostype == "Linux")
+                {
+                    imagereference.publisher = "Canonical";
+                    imagereference.offer = "UbuntuServer";
+                    imagereference.sku = "16.04.0-LTS";
+                    imagereference.version = "latest";
+                }
+                else
+                {
+                    imagereference.publisher = "<publisher>";
+                    imagereference.offer = "<offer>";
+                    imagereference.sku = "<sku>";
+                    imagereference.version = "<version>";
+                }
+            }
+            // if the tool is configured to attach copied disks
+            else
+            {
+                osdisk.createOption = "Attach";
+                osdisk.osType = ostype;
+
+                // Block of code to help copying the blobs to the new storage accounts
+                Hashtable storageaccountinfo = new Hashtable();
+                storageaccountinfo.Add("name", oldstorageaccountname);
+
+                XmlNode storageaccountkeys = GetAzureASMResources("StorageAccountKeys", storageaccountinfo)[0];
+                string key = storageaccountkeys.SelectSingleNode("StorageServiceKeys/Primary").InnerText;
+
+                CopyBlobDetail copyblobdetail = new CopyBlobDetail();
+                copyblobdetail.SourceSA = oldstorageaccountname;
+                copyblobdetail.SourceContainer = splitarray[7];
+                copyblobdetail.SourceBlob = splitarray[8] + "." + splitarray[9];
+                copyblobdetail.SourceKey = key;
+                copyblobdetail.DestinationSA = newstorageaccountname;
+                copyblobdetail.DestinationContainer = splitarray[7];
+                copyblobdetail.DestinationBlob = splitarray[8] + "." + splitarray[9];
+                copyblobdetails.Add(copyblobdetail);
+                // end of block of code to help copying the blobs to the new storage accounts
+            }
 
             // process data disks
             List<DataDisk> datadisks = new List<DataDisk>();
@@ -1421,7 +1473,6 @@ namespace ASMtoARMTemplate
                 DataDisk datadisk = new DataDisk();
                 datadisk.name = datadisknode.SelectSingleNode("DiskName").InnerText;
                 datadisk.caching = datadisknode.SelectSingleNode("HostCaching").InnerText;
-                datadisk.createOption = "Attach";
                 datadisk.diskSizeGB = Int64.Parse(datadisknode.SelectSingleNode("LogicalDiskSizeInGB").InnerText);
 
                 datadisk.lun = 0;
@@ -1433,26 +1484,37 @@ namespace ASMtoARMTemplate
                 olddiskurl = datadisknode.SelectSingleNode("MediaLink").InnerText;
                 splitarray = olddiskurl.Split(new char[] { '/', '.' });
                 oldstorageaccountname = splitarray[2];
-                newstorageaccountname = oldstorageaccountname + "v2";
+                newstorageaccountname = oldstorageaccountname + ASMtoARMTool.app.Default.UniquenessSuffix;
                 newdiskurl = olddiskurl.Replace(oldstorageaccountname, newstorageaccountname);
 
-                // Block of code to help copying the blobs to the new storage accounts
-                storageaccountinfo = new Hashtable();
-                storageaccountinfo.Add("name", oldstorageaccountname);
+                // if the tool is configured to create new VMs with empty data disks
+                if (ASMtoARMTool.app.Default.BuildEmpty)
+                {
+                    datadisk.createOption = "Empty";
+                }
+                // if the tool is configured to attach copied disks
+                else
+                {
+                    datadisk.createOption = "Attach";
 
-                storageaccountkeys = GetAzureASMResources("StorageAccountKeys", storageaccountinfo)[0];
-                key = storageaccountkeys.SelectSingleNode("StorageServiceKeys/Primary").InnerText;
+                    // Block of code to help copying the blobs to the new storage accounts
+                    Hashtable storageaccountinfo = new Hashtable();
+                    storageaccountinfo.Add("name", oldstorageaccountname);
 
-                copyblobdetail = new CopyBlobDetail();
-                copyblobdetail.SourceSA = oldstorageaccountname;
-                copyblobdetail.SourceContainer = splitarray[7];
-                copyblobdetail.SourceBlob = splitarray[8] + "." + splitarray[9];
-                copyblobdetail.SourceKey = key;
-                copyblobdetail.DestinationSA = newstorageaccountname;
-                copyblobdetail.DestinationContainer = splitarray[7];
-                copyblobdetail.DestinationBlob = splitarray[8] + "." + splitarray[9];
-                copyblobdetails.Add(copyblobdetail);
-                // end of block of code to help copying the blobs to the new storage accounts
+                    XmlNode storageaccountkeys = GetAzureASMResources("StorageAccountKeys", storageaccountinfo)[0];
+                    string key = storageaccountkeys.SelectSingleNode("StorageServiceKeys/Primary").InnerText;
+
+                    CopyBlobDetail copyblobdetail = new CopyBlobDetail();
+                    copyblobdetail.SourceSA = oldstorageaccountname;
+                    copyblobdetail.SourceContainer = splitarray[7];
+                    copyblobdetail.SourceBlob = splitarray[8] + "." + splitarray[9];
+                    copyblobdetail.SourceKey = key;
+                    copyblobdetail.DestinationSA = newstorageaccountname;
+                    copyblobdetail.DestinationContainer = splitarray[7];
+                    copyblobdetail.DestinationBlob = splitarray[8] + "." + splitarray[9];
+                    copyblobdetails.Add(copyblobdetail);
+                    // end of block of code to help copying the blobs to the new storage accounts
+                }
 
                 vhd = new Vhd();
                 vhd.uri = newdiskurl;
@@ -1465,13 +1527,13 @@ namespace ASMtoARMTemplate
             }
 
             StorageProfile storageprofile = new StorageProfile();
-            //storageprofile.imageReference = imagereference;
+            if (ASMtoARMTool.app.Default.BuildEmpty) { storageprofile.imageReference = imagereference; }
             storageprofile.osDisk = osdisk;
             storageprofile.dataDisks = datadisks;
 
             VirtualMachine_Properties virtualmachine_properties = new VirtualMachine_Properties();
             virtualmachine_properties.hardwareProfile = hardwareprofile;
-            //virtualmachine_properties.osProfile = osprofile;
+            if (ASMtoARMTool.app.Default.BuildEmpty) { virtualmachine_properties.osProfile = osprofile; }
             virtualmachine_properties.networkProfile = networkprofile;
             virtualmachine_properties.storageProfile = storageprofile;
 
@@ -1518,7 +1580,7 @@ namespace ASMtoARMTemplate
             storageaccount_properties.accountType = resource.SelectSingleNode("StorageServiceProperties/AccountType").InnerText;
 
             StorageAccount storageaccount = new StorageAccount();
-            storageaccount.name = resource.SelectSingleNode("ServiceName").InnerText + "v2";
+            storageaccount.name = resource.SelectSingleNode("ServiceName").InnerText + ASMtoARMTool.app.Default.UniquenessSuffix;
             storageaccount.location = resource.SelectSingleNode("StorageServiceProperties/Location").InnerText;
             storageaccount.properties = storageaccount_properties;
             
@@ -1580,7 +1642,6 @@ namespace ASMtoARMTemplate
             byte[] data = encoding.GetBytes(jsontext);
 
             HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("http://asmtoarmtoolapi.azurewebsites.net/api/telemetry");
-            //HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("http://localhost:1310/api/telemetry");
             request.Method = "POST";
             request.ContentType = "application/json";
             request.ContentLength = data.Length;
@@ -1633,36 +1694,28 @@ namespace ASMtoARMTemplate
             }
         }
 
-        private void chkAllowTelemetry_CheckedChanged(object sender, EventArgs e)
+        private void NewVersionAvailable()
         {
-            if (chkAllowTelemetry.Checked == true)
-            {
-                string message = "" + "\n";
-                message = "\n" + "Tool telemetry data is important for us to keep improving it. Data collected is for tool development usage only and will not be shared, by any reason, out of the tool development team or scope.";
-                message += "\n";
-                message += "\n" + "Tool telemetry DOES send:";
-                message += "\n" + ". TenantId";
-                message += "\n" + ". SubscriptionId";
-                message += "\n" + ". Processed resources type";
-                message += "\n" + ". Processed resources location";
-                message += "\n" + ". Execution date";
-                message += "\n";
-                message += "\n" + "Tool telemetry DOES NOT send:";
-                message += "\n" + ". Resources names";
-                message += "\n" + ". Any resources configuration or caracteristics";
-                message += "\n" + ". Any local computer information";
-                message += "\n" + ". Any other information not stated on the \"Tool telemetry DOES send\" section";
-                message += "\n";
-                message += "\n" + "Do you authorize the tool to send telemetry data?";
-                DialogResult dialogresult = MessageBox.Show(message, "Authorization Request", MessageBoxButtons.YesNo,MessageBoxIcon.Question);
-                if (dialogresult == DialogResult.No)
-                {
-                    chkAllowTelemetry.Checked = false;
-                }
-            }
+            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("http://asmtoarmtoolapi.azurewebsites.net/api/version");
+            request.Method = "GET";
+            request.ContentType = "application/x-www-form-urlencoded";
 
-            ASMtoARMTool.app.Default.AllowTelemetry = chkAllowTelemetry.Checked;
-            ASMtoARMTool.app.Default.Save();
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            string result = new StreamReader(response.GetResponseStream()).ReadToEnd();
+
+            string version = "\"" + Assembly.GetEntryAssembly().GetName().Version.ToString() + "\"";
+            string availableversion = result.ToString();
+
+            if (version != availableversion)
+            {
+                DialogResult dialogresult = MessageBox.Show("New version " + availableversion + " of the tool is available", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private void btnOptions_Click(object sender, EventArgs e)
+        {
+            ASMtoARMTool.Forms.formOptions formoptions = new ASMtoARMTool.Forms.formOptions();
+            formoptions.ShowDialog(this);
         }
     }
 }
