@@ -177,7 +177,7 @@ Use “Build empty environment” option to enable this.
 As the Storage Accounts supports a maximum of 24 characters in the name, and the tool adds the "uniqueness string" in the target Storage Account name, it is possible that the deployment fails if the name exceeds the limit. In such cases you need to modify the export.JSON and copyblobdetails.JSON to make it 24 characters. This is also true if the target Storage Account name is already in use.
 
 ### Troubleshooting
-The detailed logs and output of the REST API are captured in the location %USERPROFILE%\appdata\Local with the file name ASMtoARMTool-<YYYYMMDD>.log and ASMtoARMTool-XML-<YYYYMMDD>.log.
+The detailed logs and output of the REST API are captured in the location %USERPROFILE%\appdata\Local with the file name ASMtoARMTool-&lt;YYYYMMDD&gt;.log and ASMtoARMTool-XML-&lt;YYYYMMDD&gt;.log.
 In case of any issues during the deployment of the Export.JSON you need to troubleshoot the template properties and fix the invalid entries. Report any issue on the tool site.
 
 ## Known Issues
