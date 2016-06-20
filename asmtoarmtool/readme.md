@@ -62,9 +62,9 @@ The tool uses Service Management REST API calls to gather all the details on Net
 <br>
 > Migrating resources with these tool will cause downtime for your classic Virtual Machines. If you're looking for platform supported migration, please visit 
 
-- [Platform supported migration of IaaS resources from Classic to Azure Resource Manager stack](./virtual-machines-windows-migration-classic-resource-manager.md)
-- [Technical Deep Dive on Platform supported migration from Classic to Azure Resource Manager](./virtual-machines-windows-migration-classic-resource-manager-deep-dive.md)
-- [Migrate IaaS resources from Classic to Azure Resource Manager using Azure PowerShell](./virtual-machines-windows-ps-migration-classic-resource-manager.md)
+- [Platform supported migration of IaaS resources from Classic to Azure Resource Manager stack](https://azure.microsoft.com/en-us/blog/iaas-migration-classic-resource-manager/)
+- [Technical Deep Dive on Platform supported migration from Classic to Azure Resource Manager](https://azure.microsoft.com/en-us/documentation/articles/virtual-machines-windows-migration-classic-resource-manager-deep-dive)
+- [Migrate IaaS resources from Classic to Azure Resource Manager using Azure PowerShell](https://azure.microsoft.com/en-us/documentation/articles/virtual-machines-windows-ps-migration-classic-resource-manager)
 
 <br>
 
