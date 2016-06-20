@@ -73,7 +73,7 @@ The tool uses Service Management REST API calls to gather all the details on Net
 <br>
 
 ## Get it
-You can either get the tool by downloading the zip file from the above specified repo or clone the repo using the either of the commands below
+You can either get the tool by downloading the latest zip file from release folder or clone the repo using the either of the commands below
 
 
     git clone https://github.com/Azure/classic-iaas-resourcemanager-migration.git
