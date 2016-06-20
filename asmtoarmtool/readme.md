@@ -1,6 +1,6 @@
 # Classic IaaS to Azure Resource Manager IaaS migration using ASMtoARMTool
 
-This article will show you how to use ASMtoARMTool located at [Azure/classic-iaas-resourcemanager-migration](https://github.com/Azure/classic-iaas-resourcemanager-migration) to migrate or clone classic IaaS solutions to Azure Resource Manager IaaS.
+This article will show you how to use ASMtoARMTool to migrate or clone classic IaaS solutions to Azure Resource Manager IaaS.
 
 ## What it does
 
