@@ -113,7 +113,7 @@ or
 
 > If virtual machines were included on the export, an error will show up stating that the virtual machines VHDs were not found. This is expected since the blobs haven’t been copied yet to the new storage accounts.
 
-Execute steps 7 and 9 only if virtual machines were included on the export.
+Execute steps 7 to 9 only if virtual machines were included on the export.
 
 **Step 7:** initiate and complete the blob copy the required OS disks and data disks using BlobCopy.PS1 script
 
