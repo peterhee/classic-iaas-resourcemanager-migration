@@ -2,6 +2,8 @@
 
 This article will show you how to use MIGAZ to migrate or clone classic IaaS solutions to Azure Resource Manager IaaS.
 
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
 ## What it does
 
 The Azure Service Management to Azure Resource Manager migration tool for IaaS workloads (MIGAZ) is an additional option to migrate a complete set of Azure Service Management IaaS resources to Azure Resource Manager IaaS resources. The migration can occur within the same subscription or between different subscriptions and subscription types (ex: CSP subscriptions).
