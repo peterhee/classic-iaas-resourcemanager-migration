@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Dynamic;
 
-namespace ASMtoARMTool.Classes.ARM
+namespace MIGAZ.Classes.ARM
 {
     public class VirtualNetworkGateway : Resource
     {

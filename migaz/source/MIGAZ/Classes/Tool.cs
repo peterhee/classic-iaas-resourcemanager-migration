@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ASMtoARMTool.Classes
+namespace MIGAZ.Classes
 {
     public class CopyBlobDetail
     {

@@ -1,10 +1,10 @@
-# Classic IaaS to Azure Resource Manager IaaS migration using ASMtoARMTool
+# Classic IaaS to Azure Resource Manager IaaS migration using MIGAZ
 
-This article will show you how to use ASMtoARMTool to migrate or clone classic IaaS solutions to Azure Resource Manager IaaS.
+This article will show you how to use MIGAZ to migrate or clone classic IaaS solutions to Azure Resource Manager IaaS.
 
 ## What it does
 
-The Azure Service Management to Azure Resource Manager migration tool for IaaS workloads (ASMtoARMTool) is an additional option to migrate Azure Service Management IaaS resources to Azure Resource Manager IaaS resources. The migration can occur within the same subscription or between different subscriptions and subscription types (ex: CSP subscriptions).
+The Azure Service Management to Azure Resource Manager migration tool for IaaS workloads (MIGAZ) is an additional option to migrate a complete set of Azure Service Management IaaS resources to Azure Resource Manager IaaS resources. The migration can occur within the same subscription or between different subscriptions and subscription types (ex: CSP subscriptions).
 
 This article provides the functional details to use the tool for Azure Service Management to Azure Resource Manager migration of IaaS workloads. The tool exports the following resources:
 
@@ -55,9 +55,9 @@ The tool uses Service Management REST API calls to gather all the details on Net
 
 - **Copyblobdetails.JSON** - This file contains the Source and Target Storage Accounts with their keys to access them for the blob copy
 
-- **ASMtoARMTool-&lt;YYYYMMDD&gt;.log** - This file is created in the %USERPROFILE%\appdata\Local and record each steps processed in the tool
+- **MEGAZ-&lt;YYYYMMDD&gt;.log** - This file is created in the %USERPROFILE%\appdata\Local and record each steps processed in the tool
 
-- **ASMtoARMTool-XML-&lt;YYYYMMDD&gt;.log** - This file is created in the %USERPROFILE%\appdata\Local and it is an export of the raw xml captured and processed from the REST API calls
+- **MEGAZ-XML-&lt;YYYYMMDD&gt;.log** - This file is created in the %USERPROFILE%\appdata\Local and it is an export of the raw xml captured and processed from the REST API calls
 
 <br>
 > Migrating resources with these tool will cause downtime for your classic Virtual Machines. If you're looking for platform supported migration, please visit 
@@ -68,7 +68,7 @@ The tool uses Service Management REST API calls to gather all the details on Net
 
 <br>
 
-> The ASMtoARMTool is not supported by Microsoft Support. Therefore, it is open sourced on Github and we're happy to accept PRs for fixes or additional scenarios.
+> MIGAZ is not supported by Microsoft Support. Therefore, it is open sourced on Github and we're happy to accept pull requests for fixes or additional features.
 
 <br>
 
@@ -92,11 +92,15 @@ or
 1. Login credentials at source Azure subscription
 1. Login credentials at destination Azure subscription
 
-### Launch ASMtoARMTool.exe
+### Launch MIGAZ.exe
 
-![ASMtoARMTool main window](./media/virtual-machines-windows-migration-asmtoarmtool/asmtoarmtool-main.png)
+![MIGAZ main window](./media/virtual-machines-windows-migration-migaz/main.png)
 
-**Step 1:** The tool requires the Tenant ID or Domain Name of the Tenant before listing the Subscriptions. Type it in the Tenant textbox of the tool and hit on the “Get Subscriptions” button. The “Get Subscription” button will launch the Azure Authentication page and user has to enter the credentials to access the source subscription. Post successful authentication the Subscriptions will be loaded.
+**Step 1:** The tool requires the Tenant ID or Domain Name (ex: contoso.onmicrosoft.com) of the Tenant before listing the Subscriptions. Type it in the Tenant textbox of the tool and hit on the “Get Subscriptions” button. The “Get Subscription” button will launch the Azure Authentication page and user has to enter the credentials to access the source subscription.
+
+![MIGAZ main window](./media/virtual-machines-windows-migration-migaz/login.png)
+
+Post successful authentication the Subscriptions will be loaded.
 
 **Step 2:** Select one of the Subscriptions from the list and wait for the components to completely load. The status bar will show as “Ready” when all the components are loaded.
 
@@ -135,7 +139,7 @@ Execute steps 7 to 9 only if virtual machines were included on the export.
 
 ## Tool Options
 
-![ASMtoARMTool main window](./media/virtual-machines-windows-migration-asmtoarmtool/asmtoarmtool-options.png)
+![MIGAZ options window](./media/virtual-machines-windows-migration-MIGAZ/options.png)
 
 ### Uniqueness suffix
 
@@ -156,7 +160,7 @@ One of the biggest priorities when planning for an ASM to ARM migration is to mi
 
 If the migration scenario allows to create a new ARM virtual network with a different address space, you can create a site 2 site VPN connecting both ASM and ARM virtual networks. This will allow you to deploy an additional server on the new ARM environment, replicate the data and failover service with minimal downtime.
 
-You can leverage ASMtoARMTool to help on the migration of servers that do not require data replication, like application servers and web servers. 
+You can leverage MIGAZ to help on the migration of servers that do not require data replication, like application servers and web servers.
 
 ### Migration using new virtual network with same address space
 If it’s not possible to have a new ARM virtual network with a different address space, you will use the tool to migrate all solution virtual machines, but you need to plan for a larger downtime window. The downtime will be as large as the largest virtual machine to migrate (largest = OS disk used space + all data disks used space).
@@ -177,8 +181,8 @@ Use “Build empty environment” option to enable this.
 As the Storage Accounts supports a maximum of 24 characters in the name, and the tool adds the "uniqueness string" in the target Storage Account name, it is possible that the deployment fails if the name exceeds the limit. In such cases you need to modify the export.JSON and copyblobdetails.JSON to make it 24 characters. This is also true if the target Storage Account name is already in use.
 
 ### Troubleshooting
-The detailed logs and output of the REST API are captured in the location %USERPROFILE%\appdata\Local with the file name ASMtoARMTool-&lt;YYYYMMDD&gt;.log and ASMtoARMTool-XML-&lt;YYYYMMDD&gt;.log.
-In case of any issues during the deployment of the Export.JSON you need to troubleshoot the template properties and fix the invalid entries. Report any issue on the tool site.
+The detailed logs and output of the REST API are captured in the location %USERPROFILE%\appdata\Local with the file name MIGAZ-&lt;YYYYMMDD&gt;.log and MIGAZ-XML-&lt;YYYYMMDD&gt;.log.
+In case of any issues during the deployment of the export.JSON you need to troubleshoot the template properties and fix the invalid entries. Report any issue on the tool site.
 
 ## Known Issues
 Issue #1: If there are more than one Availability set in a Cloud Service then the ARM deployment fails with the below error message.

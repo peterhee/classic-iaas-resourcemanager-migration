@@ -1,4 +1,4 @@
-﻿namespace ASMtoARMTool.Forms
+﻿namespace MIGAZ.Forms
 {
     partial class formOptions
     {

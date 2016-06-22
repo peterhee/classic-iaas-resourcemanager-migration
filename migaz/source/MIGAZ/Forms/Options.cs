@@ -1,7 +1,8 @@
-﻿using System;
+﻿using MIGAZ;
+using System;
 using System.Windows.Forms;
 
-namespace ASMtoARMTool.Forms
+namespace MIGAZ.Forms
 {
     public partial class formOptions : Form
     {
@@ -49,17 +50,17 @@ namespace ASMtoARMTool.Forms
 
         private void btnOK_Click(object sender, EventArgs e)
         {
-            ASMtoARMTool.app.Default.UniquenessSuffix = txtSuffix.Text;
-            ASMtoARMTool.app.Default.BuildEmpty = chkBuildEmpty.Checked;
-            ASMtoARMTool.app.Default.AllowTelemetry = chkAllowTelemetry.Checked;
-            ASMtoARMTool.app.Default.Save();
+            app.Default.UniquenessSuffix = txtSuffix.Text;
+            app.Default.BuildEmpty = chkBuildEmpty.Checked;
+            app.Default.AllowTelemetry = chkAllowTelemetry.Checked;
+            app.Default.Save();
         }
 
         private void formOptions_Load(object sender, EventArgs e)
         {
-            txtSuffix.Text = ASMtoARMTool.app.Default.UniquenessSuffix;
-            chkBuildEmpty.Checked = ASMtoARMTool.app.Default.BuildEmpty;
-            chkAllowTelemetry.Checked = ASMtoARMTool.app.Default.AllowTelemetry;
+            txtSuffix.Text = app.Default.UniquenessSuffix;
+            chkBuildEmpty.Checked = app.Default.BuildEmpty;
+            chkAllowTelemetry.Checked = app.Default.AllowTelemetry;
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace ASMtoARMTemplate
+﻿namespace MIGAZ
 {
     partial class Window
     {
@@ -275,12 +275,12 @@
             // 
             // txtTenantID
             // 
-            this.txtTenantID.DataBindings.Add(new System.Windows.Forms.Binding("Text", global::ASMtoARMTool.app.Default, "TenantId", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
+            this.txtTenantID.DataBindings.Add(new System.Windows.Forms.Binding("Text", global::MIGAZ.app.Default, "TenantId", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
             this.txtTenantID.Location = new System.Drawing.Point(135, 21);
             this.txtTenantID.Name = "txtTenantID";
             this.txtTenantID.Size = new System.Drawing.Size(213, 20);
             this.txtTenantID.TabIndex = 0;
-            this.txtTenantID.Text = global::ASMtoARMTool.app.Default.TenantId;
+            this.txtTenantID.Text = global::MIGAZ.app.Default.TenantId;
             // 
             // btnOptions
             // 
@@ -317,7 +317,7 @@
             this.MaximizeBox = false;
             this.Name = "Window";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "ASM to ARM Tool";
+            this.Text = "MIGAZ";
             this.Load += new System.EventHandler(this.Window_Load);
             ((System.ComponentModel.ISupportInitialize)(this.gridVirtualNetworks)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridStorageAccounts)).EndInit();

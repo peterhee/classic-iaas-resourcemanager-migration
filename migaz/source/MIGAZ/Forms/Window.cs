@@ -9,12 +9,10 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.Text;
 using System.Reflection;
-using ASMtoARMTool.Classes;
-using ASMtoARMTool.Classes.ARM;
-using System.Dynamic;
-using System.Data.SqlClient;
+using MIGAZ.Classes;
+using MIGAZ.Classes.ARM;
 
-namespace ASMtoARMTemplate
+namespace MIGAZ
 {
     public partial class Window : Form
     {
@@ -33,7 +31,7 @@ namespace ASMtoARMTemplate
         {
             writeLog("Window_Load", "Program start");
 
-            this.Text = "ASM to ARM Tool (" + Assembly.GetEntryAssembly().GetName().Version.ToString() + ")";
+            this.Text = "MIGAZ (" + Assembly.GetEntryAssembly().GetName().Version.ToString() + ")";
             NewVersionAvailable(); // check if there a new version of the app
         }
 
@@ -41,8 +39,8 @@ namespace ASMtoARMTemplate
         {
             writeLog("GetToken_Click", "Start");
 
-            ASMtoARMTool.app.Default.TenantId = txtTenantID.Text;
-            ASMtoARMTool.app.Default.Save();
+            app.Default.TenantId = txtTenantID.Text;
+            app.Default.Save();
 
             cmbSubscriptions.Enabled = false;
             cmbSubscriptions.Items.Clear();
@@ -56,7 +54,7 @@ namespace ASMtoARMTemplate
                 AuthenticationContext context = new AuthenticationContext("https://login.windows.net/" + txtTenantID.Text);
 
                 AuthenticationResult result = null;
-                result = context.AcquireToken("https://management.core.windows.net/", ASMtoARMTool.app.Default.ClientId, new Uri(ASMtoARMTool.app.Default.ReturnURL), PromptBehavior.Always);
+                result = context.AcquireToken("https://management.core.windows.net/", app.Default.ClientId, new Uri(app.Default.ReturnURL), PromptBehavior.Always);
                 if (result == null)
                 {
                     throw new InvalidOperationException("Failed to obtain the token");
@@ -432,7 +430,7 @@ namespace ASMtoARMTemplate
             writeLog("Export_Click", "Write file copyblobdetails.json");
 
             // post Telemetry Record to ASMtoARMToolAPI
-            if (ASMtoARMTool.app.Default.AllowTelemetry)
+            if (app.Default.AllowTelemetry)
             {
                 postTelemetryRecord();
             }
@@ -475,7 +473,7 @@ namespace ASMtoARMTemplate
             string publicipaddress_name = resource.SelectSingleNode("ServiceName").InnerText;
 
             Hashtable dnssettings = new Hashtable();
-            dnssettings.Add("domainNameLabel", (publicipaddress_name + ASMtoARMTool.app.Default.UniquenessSuffix).ToLower());
+            dnssettings.Add("domainNameLabel", (publicipaddress_name + app.Default.UniquenessSuffix).ToLower());
 
             PublicIPAddress_Properties publicipaddress_properties = new PublicIPAddress_Properties();
             publicipaddress_properties.dnsSettings = dnssettings;
@@ -1372,7 +1370,7 @@ namespace ASMtoARMTemplate
             string olddiskurl = osvirtualharddisk.SelectSingleNode("MediaLink").InnerText;
             string[] splitarray = olddiskurl.Split(new char[] { '/', '.' });
             string oldstorageaccountname = splitarray[2];
-            string newstorageaccountname = oldstorageaccountname + ASMtoARMTool.app.Default.UniquenessSuffix;
+            string newstorageaccountname = oldstorageaccountname + app.Default.UniquenessSuffix;
             string newdiskurl = olddiskurl.Replace(oldstorageaccountname, newstorageaccountname);
 
             Hashtable storageaccountdependencies = new Hashtable();
@@ -1396,7 +1394,7 @@ namespace ASMtoARMTemplate
             OsProfile osprofile = new OsProfile();
 
             // if the tool is configured to create new VMs with empty data disks
-            if (ASMtoARMTool.app.Default.BuildEmpty)
+            if (app.Default.BuildEmpty)
             {
                 osdisk.createOption = "FromImage";
 
@@ -1484,11 +1482,11 @@ namespace ASMtoARMTemplate
                 olddiskurl = datadisknode.SelectSingleNode("MediaLink").InnerText;
                 splitarray = olddiskurl.Split(new char[] { '/', '.' });
                 oldstorageaccountname = splitarray[2];
-                newstorageaccountname = oldstorageaccountname + ASMtoARMTool.app.Default.UniquenessSuffix;
+                newstorageaccountname = oldstorageaccountname + app.Default.UniquenessSuffix;
                 newdiskurl = olddiskurl.Replace(oldstorageaccountname, newstorageaccountname);
 
                 // if the tool is configured to create new VMs with empty data disks
-                if (ASMtoARMTool.app.Default.BuildEmpty)
+                if (app.Default.BuildEmpty)
                 {
                     datadisk.createOption = "Empty";
                 }
@@ -1527,13 +1525,13 @@ namespace ASMtoARMTemplate
             }
 
             StorageProfile storageprofile = new StorageProfile();
-            if (ASMtoARMTool.app.Default.BuildEmpty) { storageprofile.imageReference = imagereference; }
+            if (app.Default.BuildEmpty) { storageprofile.imageReference = imagereference; }
             storageprofile.osDisk = osdisk;
             storageprofile.dataDisks = datadisks;
 
             VirtualMachine_Properties virtualmachine_properties = new VirtualMachine_Properties();
             virtualmachine_properties.hardwareProfile = hardwareprofile;
-            if (ASMtoARMTool.app.Default.BuildEmpty) { virtualmachine_properties.osProfile = osprofile; }
+            if (app.Default.BuildEmpty) { virtualmachine_properties.osProfile = osprofile; }
             virtualmachine_properties.networkProfile = networkprofile;
             virtualmachine_properties.storageProfile = storageprofile;
 
@@ -1580,7 +1578,7 @@ namespace ASMtoARMTemplate
             storageaccount_properties.accountType = resource.SelectSingleNode("StorageServiceProperties/AccountType").InnerText;
 
             StorageAccount storageaccount = new StorageAccount();
-            storageaccount.name = resource.SelectSingleNode("ServiceName").InnerText + ASMtoARMTool.app.Default.UniquenessSuffix;
+            storageaccount.name = resource.SelectSingleNode("ServiceName").InnerText + app.Default.UniquenessSuffix;
             storageaccount.location = resource.SelectSingleNode("StorageServiceProperties/Location").InnerText;
             storageaccount.properties = storageaccount_properties;
             
@@ -1599,14 +1597,14 @@ namespace ASMtoARMTemplate
         private void writeLog(string function, string message)
         {
             ;
-            string logfilepath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\ASMtoARMTool-" + string.Format("{0:yyyyMMdd}", DateTime.Now) + ".log";
+            string logfilepath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\MIGAZ-" + string.Format("{0:yyyyMMdd}", DateTime.Now) + ".log";
             string text = DateTime.Now.ToString() + "   " + function + "  " + message + Environment.NewLine;
             File.AppendAllText(logfilepath, text);
         }
 
         private void writeXMLtoFile(string url, string xml)
         {
-            string logfilepath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\ASMtoARMTool-XML-" + string.Format("{0:yyyyMMdd}", DateTime.Now) + ".log";
+            string logfilepath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\MIGAZ-XML-" + string.Format("{0:yyyyMMdd}", DateTime.Now) + ".log";
             string text = DateTime.Now.ToString() + "   " + url + Environment.NewLine;
             File.AppendAllText(logfilepath, text);
             text = xml + Environment.NewLine;
@@ -1641,7 +1639,7 @@ namespace ASMtoARMTemplate
             ASCIIEncoding encoding = new ASCIIEncoding();
             byte[] data = encoding.GetBytes(jsontext);
 
-            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("http://asmtoarmtoolapi.azurewebsites.net/api/telemetry");
+            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("https://asmtoarmtoolapi.azurewebsites.net/api/telemetry");
             request.Method = "POST";
             request.ContentType = "application/json";
             request.ContentLength = data.Length;
@@ -1696,7 +1694,7 @@ namespace ASMtoARMTemplate
 
         private void NewVersionAvailable()
         {
-            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("http://asmtoarmtoolapi.azurewebsites.net/api/version");
+            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("https://asmtoarmtoolapi.azurewebsites.net/api/version");
             request.Method = "GET";
             request.ContentType = "application/x-www-form-urlencoded";
 
@@ -1708,13 +1706,13 @@ namespace ASMtoARMTemplate
 
             if (version != availableversion)
             {
-                DialogResult dialogresult = MessageBox.Show("New version " + availableversion + " of the tool is available", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                DialogResult dialogresult = MessageBox.Show("New version " + availableversion + " is available at http://aka.ms/MIGAZ", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
         private void btnOptions_Click(object sender, EventArgs e)
         {
-            ASMtoARMTool.Forms.formOptions formoptions = new ASMtoARMTool.Forms.formOptions();
+            Forms.formOptions formoptions = new Forms.formOptions();
             formoptions.ShowDialog(this);
         }
     }
