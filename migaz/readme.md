@@ -141,7 +141,7 @@ Execute steps 7 to 9 only if virtual machines were included on the export.
 
 ## Tool Options
 
-![MIGAZ options window](./media/virtual-machines-windows-migration-MIGAZ/options.png)
+![MIGAZ options window](./media/virtual-machines-windows-migration-migaz/options.png)
 
 ### Uniqueness suffix
 
