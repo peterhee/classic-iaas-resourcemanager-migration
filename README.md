@@ -8,8 +8,8 @@ This is a PowerShell script module for migrating your **single** Virtual Machine
 
 [Link to the tool](../../tree/master/asm2arm)
 
-# MIGAZ
+# migAz
 
-MIGAZ is an additional option to migrate a complete set of Azure Service Management IaaS resources to Azure Resource Manager IaaS resources. The migration can occur within the same subscription or between different subscriptions and subscription types (ex: CSP subscriptions).
+migAz is an additional option to migrate a complete set of Azure Service Management IaaS resources to Azure Resource Manager IaaS resources. The migration can occur within the same subscription or between different subscriptions and subscription types (ex: CSP subscriptions).
 
 [Link to the tool](../../tree/master/migaz)

@@ -317,7 +317,7 @@
             this.MaximizeBox = false;
             this.Name = "Window";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "MIGAZ";
+            this.Text = "migAz";
             this.Load += new System.EventHandler(this.Window_Load);
             ((System.ComponentModel.ISupportInitialize)(this.gridVirtualNetworks)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridStorageAccounts)).EndInit();

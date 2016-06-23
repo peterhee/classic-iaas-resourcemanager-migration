@@ -31,7 +31,7 @@ namespace MIGAZ
         {
             writeLog("Window_Load", "Program start");
 
-            this.Text = "MIGAZ (" + Assembly.GetEntryAssembly().GetName().Version.ToString() + ")";
+            this.Text = "migAz (" + Assembly.GetEntryAssembly().GetName().Version.ToString() + ")";
             NewVersionAvailable(); // check if there a new version of the app
         }
 
