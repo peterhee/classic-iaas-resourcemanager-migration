@@ -267,10 +267,17 @@ namespace MIGAZ
                                 virtualnetworkname = hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectSingleNode("VirtualNetworkName").InnerText;
                             }
                             string deploymentname = hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectSingleNode("Name").InnerText;
-                            XmlNodeList roles = hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectNodes("RoleInstanceList/RoleInstance");
-                            foreach (XmlNode role in roles)
+                            XmlNodeList roles = hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectNodes("RoleList/Role");
+                            // GetVMLBMapping is necessary because a Cloud Service can have multiple availability sets
+                            // On ARM, a load balancer can only be attached to 1 availability set
+                            // Because of this, if multiple availability sets exist, we are breaking the cloud service in multiple load balancers
+                            //     to respect all availability sets
+                            Dictionary<string, string> vmlbmapping = GetVMLBMapping(cloudservicename, roles);
+                            foreach (XmlNode role in roles) 
                             {
-                                gridVirtualMachines.Rows.Add(cloudservicename, role.SelectSingleNode("RoleName").InnerText, deploymentname, virtualnetworkname);
+                                string virtualmachinename = role.SelectSingleNode("RoleName").InnerText;
+                                string loadbalancername = vmlbmapping[virtualmachinename];
+                                gridVirtualMachines.Rows.Add(cloudservicename, role.SelectSingleNode("RoleName").InnerText, deploymentname, virtualnetworkname, loadbalancername);
                                 Application.DoEvents();
                             }
                         }
@@ -323,6 +330,7 @@ namespace MIGAZ
         {
             writeLog("Export_Click", "Start");
 
+            app.Default.ExecutionId = Guid.NewGuid().ToString();
             resources = new List<Resource>();
             parameters = new Dictionary<string, Parameter>();
 
@@ -370,6 +378,7 @@ namespace MIGAZ
                 string deploymentname = selectedrow.Cells["colDeploymentName"].Value.ToString();
                 string virtualmachinename = selectedrow.Cells["colVirtualMachine"].Value.ToString();
                 string virtualnetworkname = selectedrow.Cells["colVirtualNetworkName"].Value.ToString().Replace(" ", "");
+                string loadbalancername = selectedrow.Cells["colLoadBalancerName"].Value.ToString();
                 string location = "";
 
                 Hashtable cloudserviceinfo = new Hashtable();
@@ -377,21 +386,22 @@ namespace MIGAZ
                 XmlNode cloudservice = GetAzureASMResources("CloudService", cloudserviceinfo)[0];
                 location = cloudservice.SelectSingleNode("HostedServiceProperties/Location").InnerText;
 
-                if (cloudservicename != cloudservicecontrol)
-                {
+                //if (cloudservicename != cloudservicecontrol)
+                //{
                     cloudservicecontrol = cloudservicename;
                     lblStatus.Text = "BUSY: Exporting Cloud Service : " + cloudservicename;
 
-                    BuildPublicIPAddressObject(cloudservice);
+                    BuildPublicIPAddressObject(cloudservice, loadbalancername);
 
-                    BuildLoadBalancerObject(cloudservice);
-                }
+                    BuildLoadBalancerObject(cloudservice, loadbalancername);
+                //}
 
                 Hashtable virtualmachineinfo = new Hashtable();
                 virtualmachineinfo.Add("cloudservicename", cloudservicename);
                 virtualmachineinfo.Add("deploymentname", deploymentname);
                 virtualmachineinfo.Add("virtualmachinename", virtualmachinename);
                 virtualmachineinfo.Add("virtualnetworkname", virtualnetworkname);
+                virtualmachineinfo.Add("loadbalancername", loadbalancername);
                 virtualmachineinfo.Add("location", location);
 
                 XmlNode virtualmachine = GetAzureASMResources("VirtualMachine", virtualmachineinfo)[0];
@@ -466,11 +476,11 @@ namespace MIGAZ
             writeLog("BuildPublicIPAddressObject", "End");
         }
 
-        private void BuildPublicIPAddressObject(XmlNode resource)
+        private void BuildPublicIPAddressObject(XmlNode resource, string loadbalancername)
         {
             writeLog("BuildPublicIPAddressObject", "Start");
 
-            string publicipaddress_name = resource.SelectSingleNode("ServiceName").InnerText;
+            string publicipaddress_name = loadbalancername;
 
             Hashtable dnssettings = new Hashtable();
             dnssettings.Add("domainNameLabel", (publicipaddress_name + app.Default.UniquenessSuffix).ToLower());
@@ -503,28 +513,29 @@ namespace MIGAZ
 
             AvailabilitySet availabilityset = new AvailabilitySet();
 
+            availabilityset.name = "defaultAS";
             if (virtualmachine.SelectSingleNode("AvailabilitySetName") != null)
             {
                 availabilityset.name = virtualmachine.SelectSingleNode("AvailabilitySetName").InnerText;
-                availabilityset.location = virtualmachineinfo["location"].ToString();
-                try // it fails if this availability set was already processed. safe to continue.
-                {
-                    processeditems.Add("Microsoft.Compute/availabilitySets/" + availabilityset.name, availabilityset.location);
-                    resources.Add(availabilityset);
-                    writeLog("BuildAvailabilitySetObject", "Microsoft.Compute/availabilitySets/" + availabilityset.name);
-                }
-                catch { }
             }
+            availabilityset.location = virtualmachineinfo["location"].ToString();
+            try // it fails if this availability set was already processed. safe to continue.
+            {
+                processeditems.Add("Microsoft.Compute/availabilitySets/" + availabilityset.name, availabilityset.location);
+                resources.Add(availabilityset);
+                writeLog("BuildAvailabilitySetObject", "Microsoft.Compute/availabilitySets/" + availabilityset.name);
+            }
+            catch { }
 
             writeLog("BuildAvailabilitySetObject", "End");
         }
 
-        private void BuildLoadBalancerObject(XmlNode cloudservice)
+        private void BuildLoadBalancerObject(XmlNode cloudservice, string loadbalancername)
         {
             writeLog("BuildLoadBalancerObject", "Start");
 
             LoadBalancer loadbalancer = new LoadBalancer();
-            loadbalancer.name = cloudservice.SelectSingleNode("ServiceName").InnerText;
+            loadbalancer.name = loadbalancername;
             loadbalancer.location = cloudservice.SelectSingleNode("HostedServiceProperties/Location").InnerText;
 
             FrontendIPConfiguration_Properties frontendipconfiguration_properties = new FrontendIPConfiguration_Properties();
@@ -587,13 +598,14 @@ namespace MIGAZ
 
             foreach (DataGridViewRow selectedrow in gridVirtualMachines.SelectedRows)
             {
-                if (selectedrow.Cells["colCloudService"].Value.ToString() == loadbalancer.name)
+                if (selectedrow.Cells["colLoadBalancerName"].Value.ToString() == loadbalancer.name)
                 {
                     //process VM
                     string cloudservicename = selectedrow.Cells["colCloudService"].Value.ToString();
                     string deploymentname = selectedrow.Cells["colDeploymentName"].Value.ToString();
                     string virtualmachinename = selectedrow.Cells["colVirtualMachine"].Value.ToString();
                     string virtualnetworkname = selectedrow.Cells["colVirtualNetworkName"].Value.ToString();
+                    string loadba = selectedrow.Cells["colVirtualNetworkName"].Value.ToString();
 
                     Hashtable virtualmachineinfo = new Hashtable();
                     virtualmachineinfo.Add("cloudservicename", cloudservicename);
@@ -601,7 +613,7 @@ namespace MIGAZ
                     virtualmachineinfo.Add("virtualmachinename", virtualmachinename);
                     XmlNode virtualmachine = GetAzureASMResources("VirtualMachine", virtualmachineinfo)[0];
 
-                    BuildLoadBalancerRules(virtualmachine, cloudservicename, ref inboundnatrules, ref loadbalancingrules, ref probes);
+                    BuildLoadBalancerRules(virtualmachine, loadbalancer.name, ref inboundnatrules, ref loadbalancingrules, ref probes);
                 }
             }
 
@@ -621,7 +633,7 @@ namespace MIGAZ
             writeLog("BuildLoadBalancerObject", "End");
         }
 
-        private void BuildLoadBalancerRules(XmlNode resource, string cloudservicename, ref List<InboundNatRule> inboundnatrules, ref List<LoadBalancingRule> loadbalancingrules, ref List<Probe> probes)
+        private void BuildLoadBalancerRules(XmlNode resource, string loadbalancername, ref List<InboundNatRule> inboundnatrules, ref List<LoadBalancingRule> loadbalancingrules, ref List<Probe> probes)
         {
             writeLog("BuildLoadBalancerRules", "Start");
 
@@ -637,7 +649,7 @@ namespace MIGAZ
                     inboundnatrule_properties.protocol = inputendpoint.SelectSingleNode("Protocol").InnerText;
 
                     Reference frontendIPConfiguration = new Reference();
-                    frontendIPConfiguration.id = "[concat(resourceGroup().id,'/providers/Microsoft.Network/loadBalancers/" + cloudservicename + "/frontendIPConfigurations/default')]";
+                    frontendIPConfiguration.id = "[concat(resourceGroup().id,'/providers/Microsoft.Network/loadBalancers/" + loadbalancername + "/frontendIPConfigurations/default')]";
                     inboundnatrule_properties.frontendIPConfiguration = frontendIPConfiguration;
 
                     InboundNatRule inboundnatrule = new InboundNatRule();
@@ -663,20 +675,20 @@ namespace MIGAZ
 
                     try // fails if this probe already exists. safe to continue
                     {
-                        processeditems.Add("Microsoft.Network/loadBalancers/" + cloudservicename + "/probes/" + probe.name, "");
+                        processeditems.Add("Microsoft.Network/loadBalancers/" + loadbalancername + "/probes/" + probe.name, "");
                         probes.Add(probe);
                     }
                     catch { }
 
                     // build load balancing rule
                     Reference frontendipconfiguration_ref = new Reference();
-                    frontendipconfiguration_ref.id = "[concat(resourceGroup().id,'/providers/Microsoft.Network/loadBalancers/" + cloudservicename + "/frontendIPConfigurations/default')]";
+                    frontendipconfiguration_ref.id = "[concat(resourceGroup().id,'/providers/Microsoft.Network/loadBalancers/" + loadbalancername + "/frontendIPConfigurations/default')]";
 
                     Reference backendaddresspool_ref = new Reference();
-                    backendaddresspool_ref.id = "[concat(resourceGroup().id, '/providers/Microsoft.Network/loadBalancers/" + cloudservicename + "/backendAddressPools/default')]";
+                    backendaddresspool_ref.id = "[concat(resourceGroup().id, '/providers/Microsoft.Network/loadBalancers/" + loadbalancername + "/backendAddressPools/default')]";
 
                     Reference probe_ref = new Reference();
-                    probe_ref.id = "[concat(resourceGroup().id,'/providers/Microsoft.Network/loadBalancers/" + cloudservicename + "/probes/" + probe.name + "')]";
+                    probe_ref.id = "[concat(resourceGroup().id,'/providers/Microsoft.Network/loadBalancers/" + loadbalancername + "/probes/" + probe.name + "')]";
 
                     LoadBalancingRule_Properties loadbalancingrule_properties = new LoadBalancingRule_Properties();
                     loadbalancingrule_properties.frontendIPConfiguration = frontendipconfiguration_ref;
@@ -692,9 +704,9 @@ namespace MIGAZ
 
                     try // fails if this load balancing rule already exists. safe to continue
                     {
-                        processeditems.Add("Microsoft.Network/loadBalancers/" + cloudservicename + "/loadBalancingRules/" + loadbalancingrule.name, "");
+                        processeditems.Add("Microsoft.Network/loadBalancers/" + loadbalancername + "/loadBalancingRules/" + loadbalancingrule.name, "");
                         loadbalancingrules.Add(loadbalancingrule);
-                        writeLog("BuildLoadBalancerRules", "Microsoft.Network/loadBalancers/" + cloudservicename + "/loadBalancingRules/" + loadbalancingrule.name);
+                        writeLog("BuildLoadBalancerRules", "Microsoft.Network/loadBalancers/" + loadbalancername + "/loadBalancingRules/" + loadbalancingrule.name);
                     }
                     catch { continue; }
                 }
@@ -1159,6 +1171,7 @@ namespace MIGAZ
             string cloudservicename = virtualmachineinfo["cloudservicename"].ToString();
             string deploymentname = virtualmachineinfo["deploymentname"].ToString();
             string virtualnetworkname = virtualmachineinfo["virtualnetworkname"].ToString();
+            string loadbalancername = virtualmachineinfo["loadbalancername"].ToString();
             string subnet_name = "";
 
             if (virtualnetworkname != "empty")
@@ -1197,7 +1210,7 @@ namespace MIGAZ
             if (inputendpoints.Count > 0)
             {
                 Reference loadBalancerBackendAddressPool = new Reference();
-                loadBalancerBackendAddressPool.id = "[concat(resourceGroup().id, '/providers/Microsoft.Network/loadBalancers/" + cloudservicename + "/backendAddressPools/default')]";
+                loadBalancerBackendAddressPool.id = "[concat(resourceGroup().id, '/providers/Microsoft.Network/loadBalancers/" + loadbalancername + "/backendAddressPools/default')]";
 
                 loadBalancerBackendAddressPools.Add(loadBalancerBackendAddressPool);
             }
@@ -1212,7 +1225,7 @@ namespace MIGAZ
                     inboundnatrulename = inboundnatrulename.Replace(" ", "");
 
                     Reference loadBalancerInboundNatRule = new Reference();
-                    loadBalancerInboundNatRule.id = "[concat(resourceGroup().id, '/providers/Microsoft.Network/loadBalancers/" + cloudservicename + "/inboundNatRules/" + inboundnatrulename + "')]";
+                    loadBalancerInboundNatRule.id = "[concat(resourceGroup().id, '/providers/Microsoft.Network/loadBalancers/" + loadbalancername + "/inboundNatRules/" + inboundnatrulename + "')]";
 
                     loadBalancerInboundNatRules.Add(loadBalancerInboundNatRule);
                 }
@@ -1250,7 +1263,7 @@ namespace MIGAZ
             {
                 dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/virtualNetworks/" + virtualnetworkname + "')]");
             }
-            dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/loadBalancers/" + cloudservicename + "')]");
+            dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/loadBalancers/" + loadbalancername + "')]");
 
             string networkinterface_name = virtualmachinename;
             NetworkInterface networkinterface = new NetworkInterface();
@@ -1538,16 +1551,17 @@ namespace MIGAZ
             List<string> dependson = new List<string>();
             dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/networkInterfaces/" + networkinterfacename + "')]");
 
+            string availabilitysetname = "defaultAS";
             if (resource.SelectSingleNode("AvailabilitySetName") != null)
             {
-                string availabilitysetname = resource.SelectSingleNode("AvailabilitySetName").InnerText;
-
-                Reference availabilityset = new Reference();
-                availabilityset.id = "[concat(resourceGroup().id, '/providers/Microsoft.Compute/availabilitySets/" + availabilitysetname + "')]";
-                virtualmachine_properties.availabilitySet = availabilityset;
-
-                dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Compute/availabilitySets/" + availabilitysetname + "')]");
+                availabilitysetname = resource.SelectSingleNode("AvailabilitySetName").InnerText;
             }
+
+            Reference availabilityset = new Reference();
+            availabilityset.id = "[concat(resourceGroup().id, '/providers/Microsoft.Compute/availabilitySets/" + availabilitysetname + "')]";
+            virtualmachine_properties.availabilitySet = availabilityset;
+
+            dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Compute/availabilitySets/" + availabilitysetname + "')]");
 
             foreach (DictionaryEntry storageaccountdependency in storageaccountdependencies)
             {
@@ -1630,6 +1644,7 @@ namespace MIGAZ
         private void postTelemetryRecord()
         {
             TelemetryRecord telemetryrecord = new TelemetryRecord();
+            telemetryrecord.ExecutionId = Guid.Parse(app.Default.ExecutionId);
             telemetryrecord.TenantId = txtTenantID.Text;
             telemetryrecord.SubscriptionId = new Guid(subscriptionid);
             telemetryrecord.ProcessedResources = processeditems;
@@ -1710,7 +1725,61 @@ namespace MIGAZ
             }
         }
 
-        private void btnOptions_Click(object sender, EventArgs e)
+        private Dictionary<string, string> GetVMLBMapping(string cloudservicename, XmlNodeList roles)
+        {
+            Dictionary<string, string> aslbnamemapping = new Dictionary<string, string>();
+            Dictionary<string, string> aslbnamemapping2 = new Dictionary<string, string>();
+
+            foreach (XmlNode role in roles)
+            {
+                string availabilitysetname = "empty";
+                if (role.SelectNodes("AvailabilitySetName").Count > 0)
+                {
+                    availabilitysetname = role.SelectSingleNode("AvailabilitySetName").InnerText;
+                }
+
+                if (!aslbnamemapping.ContainsKey(availabilitysetname))
+                {
+                    aslbnamemapping.Add(availabilitysetname, "");
+                }
+            }
+
+            if (aslbnamemapping.Count == 1)
+            {
+                foreach (KeyValuePair<string, string> keyvaluepair in aslbnamemapping)
+                {
+                    aslbnamemapping2.Add(keyvaluepair.Key, cloudservicename);
+                }
+            }
+            else
+            {
+                int increment = 1;
+                foreach (KeyValuePair<string, string> keyvaluepair in aslbnamemapping)
+                {
+                    aslbnamemapping2.Add(keyvaluepair.Key, cloudservicename + "-LB" + increment.ToString());
+                    increment += 1;
+                }
+            }
+
+            Dictionary<string, string> vmlbmapping = new Dictionary<string, string>();
+
+            foreach (XmlNode role in roles)
+            {
+                string virtualmachinename = role.SelectSingleNode("RoleName").InnerText;
+                string availabilitysetname = "empty";
+                if (role.SelectNodes("AvailabilitySetName").Count > 0)
+                {
+                    availabilitysetname = role.SelectSingleNode("AvailabilitySetName").InnerText;
+                }
+                string loadbalancername = aslbnamemapping2[availabilitysetname];
+
+                vmlbmapping.Add(virtualmachinename, loadbalancername);
+            }
+
+            return vmlbmapping;
+        }
+
+    private void btnOptions_Click(object sender, EventArgs e)
         {
             Forms.formOptions formoptions = new Forms.formOptions();
             formoptions.ShowDialog(this);

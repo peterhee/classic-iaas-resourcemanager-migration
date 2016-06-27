@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Dynamic;
+using System;
 
 namespace MIGAZ.Classes.ARM
 {
@@ -439,8 +439,18 @@ namespace MIGAZ.Classes.ARM
         public string apiVersion;
         public string name;
         public string location = "[resourceGroup().location]";
+        public Dictionary<string, string> tags;
         public List<string> dependsOn;
         public object properties;
+
+        public Resource()
+        {
+            if (app.Default.AllowTag)
+            {
+                tags = new Dictionary<string, string>();
+                tags.Add("migAz", app.Default.ExecutionId);
+            }
+        }
     }
 
     public class Parameter

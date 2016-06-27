@@ -26,6 +26,7 @@ namespace MIGAZ.Classes
 
     public class TelemetryRecord
     {
+        public Guid ExecutionId;
         public string TenantId;
         public System.Guid SubscriptionId;
         public Dictionary<string, string> ProcessedResources;

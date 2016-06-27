@@ -37,10 +37,6 @@
             this.gridStorageAccounts = new System.Windows.Forms.DataGridView();
             this.colStorageAccount = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.gridVirtualMachines = new System.Windows.Forms.DataGridView();
-            this.colCloudService = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.colVirtualMachine = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.colDeploymentName = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.colVirtualNetworkName = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.btnExport = new System.Windows.Forms.Button();
             this.btnChoosePath = new System.Windows.Forms.Button();
             this.txtDestinationFolder = new System.Windows.Forms.TextBox();
@@ -52,6 +48,11 @@
             this.lblSubscriptions = new System.Windows.Forms.Label();
             this.txtTenantID = new System.Windows.Forms.TextBox();
             this.btnOptions = new System.Windows.Forms.Button();
+            this.colCloudService = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colVirtualMachine = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colDeploymentName = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colVirtualNetworkName = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colLoadBalancerName = new System.Windows.Forms.DataGridViewTextBoxColumn();
             ((System.ComponentModel.ISupportInitialize)(this.gridVirtualNetworks)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridStorageAccounts)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridVirtualMachines)).BeginInit();
@@ -150,7 +151,8 @@
             this.colCloudService,
             this.colVirtualMachine,
             this.colDeploymentName,
-            this.colVirtualNetworkName});
+            this.colVirtualNetworkName,
+            this.colLoadBalancerName});
             this.gridVirtualMachines.Location = new System.Drawing.Point(500, 79);
             this.gridVirtualMachines.Name = "gridVirtualMachines";
             this.gridVirtualMachines.ReadOnly = true;
@@ -159,38 +161,6 @@
             this.gridVirtualMachines.Size = new System.Drawing.Size(446, 419);
             this.gridVirtualMachines.TabIndex = 15;
             this.gridVirtualMachines.SelectionChanged += new System.EventHandler(this.gridVirtualMachines_SelectionChanged);
-            // 
-            // colCloudService
-            // 
-            this.colCloudService.FillWeight = 213F;
-            this.colCloudService.HeaderText = "Cloud Service";
-            this.colCloudService.Name = "colCloudService";
-            this.colCloudService.ReadOnly = true;
-            this.colCloudService.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
-            this.colCloudService.Width = 213;
-            // 
-            // colVirtualMachine
-            // 
-            this.colVirtualMachine.FillWeight = 213F;
-            this.colVirtualMachine.HeaderText = "Virtual Machines";
-            this.colVirtualMachine.Name = "colVirtualMachine";
-            this.colVirtualMachine.ReadOnly = true;
-            this.colVirtualMachine.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
-            this.colVirtualMachine.Width = 213;
-            // 
-            // colDeploymentName
-            // 
-            this.colDeploymentName.HeaderText = "Deployment Name";
-            this.colDeploymentName.Name = "colDeploymentName";
-            this.colDeploymentName.ReadOnly = true;
-            this.colDeploymentName.Visible = false;
-            // 
-            // colVirtualNetworkName
-            // 
-            this.colVirtualNetworkName.HeaderText = "Virtual Network Name";
-            this.colVirtualNetworkName.Name = "colVirtualNetworkName";
-            this.colVirtualNetworkName.ReadOnly = true;
-            this.colVirtualNetworkName.Visible = false;
             // 
             // btnExport
             // 
@@ -292,6 +262,45 @@
             this.btnOptions.UseVisualStyleBackColor = true;
             this.btnOptions.Click += new System.EventHandler(this.btnOptions_Click);
             // 
+            // colCloudService
+            // 
+            this.colCloudService.FillWeight = 213F;
+            this.colCloudService.HeaderText = "Cloud Service";
+            this.colCloudService.Name = "colCloudService";
+            this.colCloudService.ReadOnly = true;
+            this.colCloudService.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            this.colCloudService.Width = 213;
+            // 
+            // colVirtualMachine
+            // 
+            this.colVirtualMachine.FillWeight = 213F;
+            this.colVirtualMachine.HeaderText = "Virtual Machines";
+            this.colVirtualMachine.Name = "colVirtualMachine";
+            this.colVirtualMachine.ReadOnly = true;
+            this.colVirtualMachine.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            this.colVirtualMachine.Width = 213;
+            // 
+            // colDeploymentName
+            // 
+            this.colDeploymentName.HeaderText = "Deployment Name";
+            this.colDeploymentName.Name = "colDeploymentName";
+            this.colDeploymentName.ReadOnly = true;
+            this.colDeploymentName.Visible = false;
+            // 
+            // colVirtualNetworkName
+            // 
+            this.colVirtualNetworkName.HeaderText = "Virtual Network Name";
+            this.colVirtualNetworkName.Name = "colVirtualNetworkName";
+            this.colVirtualNetworkName.ReadOnly = true;
+            this.colVirtualNetworkName.Visible = false;
+            // 
+            // colLoadBalancerName
+            // 
+            this.colLoadBalancerName.HeaderText = "LoadBalancerName";
+            this.colLoadBalancerName.Name = "colLoadBalancerName";
+            this.colLoadBalancerName.ReadOnly = true;
+            this.colLoadBalancerName.Visible = false;
+            // 
             // Window
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -347,13 +356,14 @@
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel lblStatus;
         private System.Windows.Forms.DataGridViewTextBoxColumn colStorageAccount;
+        private System.Windows.Forms.ComboBox cmbSubscriptions;
+        private System.Windows.Forms.Label lblSubscriptions;
+        private System.Windows.Forms.Button btnOptions;
         private System.Windows.Forms.DataGridViewTextBoxColumn colCloudService;
         private System.Windows.Forms.DataGridViewTextBoxColumn colVirtualMachine;
         private System.Windows.Forms.DataGridViewTextBoxColumn colDeploymentName;
         private System.Windows.Forms.DataGridViewTextBoxColumn colVirtualNetworkName;
-        private System.Windows.Forms.ComboBox cmbSubscriptions;
-        private System.Windows.Forms.Label lblSubscriptions;
-        private System.Windows.Forms.Button btnOptions;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colLoadBalancerName;
     }
 }
 
