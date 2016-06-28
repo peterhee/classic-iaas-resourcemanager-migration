@@ -88,5 +88,26 @@ namespace MIGAZ {
                 this["BuildEmpty"] = value;
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool AllowTag {
+            get {
+                return ((bool)(this["AllowTag"]));
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string ExecutionId {
+            get {
+                return ((string)(this["ExecutionId"]));
+            }
+            set {
+                this["ExecutionId"] = value;
+            }
+        }
     }
 }

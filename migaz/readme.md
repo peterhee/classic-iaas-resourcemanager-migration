@@ -185,10 +185,3 @@ As the Storage Accounts supports a maximum of 24 characters in the name, and the
 ### Troubleshooting
 The detailed logs and output of the REST API are captured in the location %USERPROFILE%\appdata\Local with the file name migAz-&lt;YYYYMMDD&gt;.log and migAz-XML-&lt;YYYYMMDD&gt;.log.
 In case of any issues during the deployment of the export.JSON you need to troubleshoot the template properties and fix the invalid entries. Report any issue on the tool site.
-
-## Known Issues
-Issue #1: If there are more than one Availability set in a Cloud Service then the ARM deployment fails with the below error message.
-
-Error: “Microsoft.Compute/virtualMachines/<VM Name> is using different Availability Set than other Virtual Machines connected to the Load Balancer(s) <VM Name>”
-
-Workaround: As ARM does not support multiple Availability sets under a single Load Balancer we need to use single availability set for all the VM’s or we need to have a separate Load Balancer for each Availability Set.
