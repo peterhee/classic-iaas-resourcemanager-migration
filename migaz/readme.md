@@ -57,9 +57,9 @@ The tool uses Service Management REST API calls to gather all the details on Net
 
 - **Copyblobdetails.JSON** - This file contains the Source and Target Storage Accounts with their keys to access them for the blob copy
 
-- **MEGAZ-&lt;YYYYMMDD&gt;.log** - This file is created in the %USERPROFILE%\appdata\Local and record each steps processed in the tool
+- **MIGAZ-&lt;YYYYMMDD&gt;.log** - This file is created in the %USERPROFILE%\appdata\Local and record each steps processed in the tool
 
-- **MEGAZ-XML-&lt;YYYYMMDD&gt;.log** - This file is created in the %USERPROFILE%\appdata\Local and it is an export of the raw xml captured and processed from the REST API calls
+- **MIGAZ-XML-&lt;YYYYMMDD&gt;.log** - This file is created in the %USERPROFILE%\appdata\Local and it is an export of the raw xml captured and processed from the REST API calls
 
 <br>
 > Migrating resources with these tool will cause downtime for your classic Virtual Machines. If you're looking for platform supported migration, please visit 

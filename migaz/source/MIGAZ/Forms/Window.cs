@@ -259,26 +259,29 @@ namespace MIGAZ
                     XmlNodeList hostedservice = GetAzureASMResources("CloudService", cloudserviceinfo);
                     if (hostedservice[0].SelectNodes("Deployments/Deployment").Count > 0)
                     {
-                        if (hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectSingleNode("RoleType").InnerText == "PersistentVMRole")
+                        if (hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectNodes("RoleType").Count > 0)
                         {
-                            string virtualnetworkname = "empty";
-                            if (hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectSingleNode("VirtualNetworkName") != null)
+                            if (hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectSingleNode("RoleType").InnerText == "PersistentVMRole")
                             {
-                                virtualnetworkname = hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectSingleNode("VirtualNetworkName").InnerText;
-                            }
-                            string deploymentname = hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectSingleNode("Name").InnerText;
-                            XmlNodeList roles = hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectNodes("RoleList/Role");
-                            // GetVMLBMapping is necessary because a Cloud Service can have multiple availability sets
-                            // On ARM, a load balancer can only be attached to 1 availability set
-                            // Because of this, if multiple availability sets exist, we are breaking the cloud service in multiple load balancers
-                            //     to respect all availability sets
-                            Dictionary<string, string> vmlbmapping = GetVMLBMapping(cloudservicename, roles);
-                            foreach (XmlNode role in roles) 
-                            {
-                                string virtualmachinename = role.SelectSingleNode("RoleName").InnerText;
-                                string loadbalancername = vmlbmapping[virtualmachinename];
-                                gridVirtualMachines.Rows.Add(cloudservicename, role.SelectSingleNode("RoleName").InnerText, deploymentname, virtualnetworkname, loadbalancername);
-                                Application.DoEvents();
+                                string virtualnetworkname = "empty";
+                                if (hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectSingleNode("VirtualNetworkName") != null)
+                                {
+                                    virtualnetworkname = hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectSingleNode("VirtualNetworkName").InnerText;
+                                }
+                                string deploymentname = hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectSingleNode("Name").InnerText;
+                                XmlNodeList roles = hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectNodes("RoleList/Role");
+                                // GetVMLBMapping is necessary because a Cloud Service can have multiple availability sets
+                                // On ARM, a load balancer can only be attached to 1 availability set
+                                // Because of this, if multiple availability sets exist, we are breaking the cloud service in multiple load balancers
+                                //     to respect all availability sets
+                                Dictionary<string, string> vmlbmapping = GetVMLBMapping(cloudservicename, roles);
+                                foreach (XmlNode role in roles)
+                                {
+                                    string virtualmachinename = role.SelectSingleNode("RoleName").InnerText;
+                                    string loadbalancername = vmlbmapping[virtualmachinename];
+                                    gridVirtualMachines.Rows.Add(cloudservicename, role.SelectSingleNode("RoleName").InnerText, deploymentname, virtualnetworkname, loadbalancername);
+                                    Application.DoEvents();
+                                }
                             }
                         }
                     }
