@@ -44,9 +44,9 @@ namespace MIGAZ
 
             cmbSubscriptions.Enabled = false;
             cmbSubscriptions.Items.Clear();
-            gridVirtualNetworks.Rows.Clear();
-            gridStorageAccounts.Rows.Clear();
-            gridVirtualMachines.Rows.Clear();
+            lvwVirtualNetworks.Items.Clear();
+            lvwStorageAccounts.Items.Clear();
+            lvwVirtualMachines.Items.Clear();
 
             if (lblToken.Text == "token")
             {
@@ -230,22 +230,22 @@ namespace MIGAZ
             {
                 writeLog("Subscriptions_SelectionChanged", "Start");
 
-                gridVirtualNetworks.Rows.Clear();
-                gridStorageAccounts.Rows.Clear();
-                gridVirtualMachines.Rows.Clear();
+                lvwVirtualNetworks.Items.Clear();
+                lvwStorageAccounts.Items.Clear();
+                lvwVirtualMachines.Items.Clear();
 
                 // Get Subscription from ComboBox
                 subscriptionid = cmbSubscriptions.SelectedItem.ToString().Split(new char[] {'|'})[0].ToString().Trim();
 
                 foreach (XmlNode virtualnetworksite in GetAzureASMResources("VirtualNetworks", null))
                 {
-                    gridVirtualNetworks.Rows.Add(virtualnetworksite.SelectSingleNode("Name").InnerText);
+                    lvwVirtualNetworks.Items.Add(virtualnetworksite.SelectSingleNode("Name").InnerText);
                     Application.DoEvents();
                 }
 
                 foreach (XmlNode storageaccount in GetAzureASMResources("StorageAccounts", null))
                 {
-                    gridStorageAccounts.Rows.Add(storageaccount.SelectSingleNode("ServiceName").InnerText);
+                    lvwStorageAccounts.Items.Add(storageaccount.SelectSingleNode("ServiceName").InnerText);
                     Application.DoEvents();
                 }
 
@@ -279,7 +279,9 @@ namespace MIGAZ
                                 {
                                     string virtualmachinename = role.SelectSingleNode("RoleName").InnerText;
                                     string loadbalancername = vmlbmapping[virtualmachinename];
-                                    gridVirtualMachines.Rows.Add(cloudservicename, role.SelectSingleNode("RoleName").InnerText, deploymentname, virtualnetworkname, loadbalancername);
+                                    var listItem = new ListViewItem(cloudservicename);
+                                    listItem.SubItems.AddRange(new[] { virtualmachinename, deploymentname, virtualnetworkname, loadbalancername });
+                                    lvwVirtualMachines.Items.Add(listItem);
                                     Application.DoEvents();
                                 }
                             }
@@ -288,29 +290,30 @@ namespace MIGAZ
                 }
 
                 lblStatus.Text = "Ready";
-                gridVirtualNetworks.CurrentCell = null;
-                gridStorageAccounts.CurrentCell = null;
-                gridVirtualMachines.CurrentCell = null;
 
                 writeLog("Subscriptions_SelectionChanged", "End");
             }
         }
 
-        private void gridVirtualNetworks_SelectionChanged(object sender, EventArgs e)
+
+        private void lvwVirtualNetworks_ItemChecked(object sender, ItemCheckedEventArgs e)
         {
-            Int32 numofobjects = gridVirtualNetworks.SelectedRows.Count + gridStorageAccounts.SelectedRows.Count + gridVirtualMachines.SelectedRows.Count;
-            btnExport.Text = "Export " + numofobjects.ToString() + " objects";
+            UpdateExportItemsCount();
         }
 
-        private void gridStorageAccounts_SelectionChanged(object sender, EventArgs e)
+        private void lvwStorageAccounts_ItemChecked(object sender, ItemCheckedEventArgs e)
         {
-            Int32 numofobjects = gridVirtualNetworks.SelectedRows.Count + gridStorageAccounts.SelectedRows.Count + gridVirtualMachines.SelectedRows.Count;
-            btnExport.Text = "Export " + numofobjects.ToString() + " objects";
+            UpdateExportItemsCount();
         }
 
-        private void gridVirtualMachines_SelectionChanged(object sender, EventArgs e)
+        private void lvwVirtualMachines_ItemChecked(object sender, ItemCheckedEventArgs e)
         {
-            Int32 numofobjects = gridVirtualNetworks.SelectedRows.Count + gridStorageAccounts.SelectedRows.Count + gridVirtualMachines.SelectedRows.Count;
+            UpdateExportItemsCount();
+        }
+
+        private void UpdateExportItemsCount()
+        {
+            int numofobjects = lvwVirtualNetworks.CheckedItems.Count + lvwStorageAccounts.CheckedItems.Count + lvwVirtualMachines.CheckedItems.Count;
             btnExport.Text = "Export " + numofobjects.ToString() + " objects";
         }
 
@@ -342,9 +345,10 @@ namespace MIGAZ
 
             writeLog("Export_Click", "Start processing selected virtual networks");
             // process selected virtual networks
-            foreach (DataGridViewRow selectedrow in gridVirtualNetworks.SelectedRows)
+            foreach (var selectedrow in lvwVirtualNetworks.CheckedItems)
             {
-                string virtualnetworkname = selectedrow.Cells["colVirtualNetwork"].Value.ToString();
+                var item = (ListViewItem)selectedrow;
+                string virtualnetworkname = item.Text;
                 lblStatus.Text = "BUSY: Exporting Virtual Network : " + virtualnetworkname;
 
                 foreach (XmlNode virtualnetworksite in GetAzureASMResources("VirtualNetworks", null))
@@ -359,9 +363,10 @@ namespace MIGAZ
 
             writeLog("Export_Click", "Start processing selected storage accounts");
             // process selected storage accounts
-            foreach (DataGridViewRow selectedrow in gridStorageAccounts.SelectedRows)
+            foreach (var selectedrow in lvwStorageAccounts.CheckedItems)
             {
-                string storageaccountname = selectedrow.Cells["colStorageAccount"].Value.ToString();
+                var item = (ListViewItem)selectedrow;
+                string storageaccountname = item.Text;
                 lblStatus.Text = "BUSY: Exporting Storage Account : " + storageaccountname;
 
                 Hashtable storageaccountinfo = new Hashtable();
@@ -375,13 +380,14 @@ namespace MIGAZ
             writeLog("Export_Click", "Start processing selected cloud services and virtual machines");
             // process selected cloud services and virtual machines
             string cloudservicecontrol = "";
-            foreach (DataGridViewRow selectedrow in gridVirtualMachines.SelectedRows)
+            foreach (var selectedrow in lvwVirtualMachines.CheckedItems)
             {
-                string cloudservicename = selectedrow.Cells["colCloudService"].Value.ToString();
-                string deploymentname = selectedrow.Cells["colDeploymentName"].Value.ToString();
-                string virtualmachinename = selectedrow.Cells["colVirtualMachine"].Value.ToString();
-                string virtualnetworkname = selectedrow.Cells["colVirtualNetworkName"].Value.ToString().Replace(" ", "");
-                string loadbalancername = selectedrow.Cells["colLoadBalancerName"].Value.ToString();
+                var listViewItem = (ListViewItem)selectedrow;
+                string cloudservicename = listViewItem.Text;
+                string virtualmachinename = listViewItem.SubItems[1].Text;
+                string deploymentname = listViewItem.SubItems[2].Text;
+                string virtualnetworkname = listViewItem.SubItems[3].Text.Replace(" ", "");
+                string loadbalancername = listViewItem.SubItems[4].Text;
                 string location = "";
 
                 Hashtable cloudserviceinfo = new Hashtable();
@@ -599,16 +605,17 @@ namespace MIGAZ
             List<LoadBalancingRule> loadbalancingrules = new List<LoadBalancingRule>();
             List<Probe> probes = new List<Probe>();
 
-            foreach (DataGridViewRow selectedrow in gridVirtualMachines.SelectedRows)
+            foreach (var selectedrow in lvwVirtualMachines.CheckedItems)
             {
-                if (selectedrow.Cells["colLoadBalancerName"].Value.ToString() == loadbalancer.name)
+                var listViewItem = (ListViewItem)selectedrow;
+                if (listViewItem.SubItems[4].Name == loadbalancer.name)
                 {
                     //process VM
-                    string cloudservicename = selectedrow.Cells["colCloudService"].Value.ToString();
-                    string deploymentname = selectedrow.Cells["colDeploymentName"].Value.ToString();
-                    string virtualmachinename = selectedrow.Cells["colVirtualMachine"].Value.ToString();
-                    string virtualnetworkname = selectedrow.Cells["colVirtualNetworkName"].Value.ToString();
-                    string loadba = selectedrow.Cells["colVirtualNetworkName"].Value.ToString();
+                    string cloudservicename = listViewItem.SubItems[0].Name;
+                    string virtualmachinename = listViewItem.SubItems[1].Name;
+                    string deploymentname = listViewItem.SubItems[2].Name;
+                    string virtualnetworkname = listViewItem.SubItems[3].Name.Replace(" ", "");
+                    string loadba = listViewItem.SubItems[4].Name;
 
                     Hashtable virtualmachineinfo = new Hashtable();
                     virtualmachineinfo.Add("cloudservicename", cloudservicename);
@@ -1782,10 +1789,12 @@ namespace MIGAZ
             return vmlbmapping;
         }
 
-    private void btnOptions_Click(object sender, EventArgs e)
+        private void btnOptions_Click(object sender, EventArgs e)
         {
             Forms.formOptions formoptions = new Forms.formOptions();
             formoptions.ShowDialog(this);
         }
+
+  
     }
 }
