@@ -29,9 +29,7 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Window));
-            this.lblTenantID = new System.Windows.Forms.Label();
             this.btnGetToken = new System.Windows.Forms.Button();
-            this.lblToken = new System.Windows.Forms.Label();
             this.btnExport = new System.Windows.Forms.Button();
             this.btnChoosePath = new System.Windows.Forms.Button();
             this.txtDestinationFolder = new System.Windows.Forms.TextBox();
@@ -42,7 +40,6 @@
             this.cmbSubscriptions = new System.Windows.Forms.ComboBox();
             this.lblSubscriptions = new System.Windows.Forms.Label();
             this.btnOptions = new System.Windows.Forms.Button();
-            this.txtTenantID = new System.Windows.Forms.TextBox();
             this.lvwVirtualNetworks = new System.Windows.Forms.ListView();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
@@ -51,40 +48,20 @@
             this.lvwVirtualMachines = new System.Windows.Forms.ListView();
             this.colCloudService = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.colVMName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.lblSignInText = new System.Windows.Forms.Label();
             this.statusStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
-            // lblTenantID
-            // 
-            this.lblTenantID.AutoSize = true;
-            this.lblTenantID.Location = new System.Drawing.Point(32, 37);
-            this.lblTenantID.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblTenantID.Name = "lblTenantID";
-            this.lblTenantID.Size = new System.Drawing.Size(161, 20);
-            this.lblTenantID.TabIndex = 1;
-            this.lblTenantID.Text = "Tenant (Id or domain)";
-            // 
             // btnGetToken
             // 
-            this.btnGetToken.Location = new System.Drawing.Point(328, 77);
+            this.btnGetToken.Location = new System.Drawing.Point(36, 20);
             this.btnGetToken.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.btnGetToken.Name = "btnGetToken";
             this.btnGetToken.Size = new System.Drawing.Size(194, 35);
             this.btnGetToken.TabIndex = 2;
-            this.btnGetToken.Text = "Get Subscriptions";
+            this.btnGetToken.Text = "Sign In";
             this.btnGetToken.UseVisualStyleBackColor = true;
             this.btnGetToken.Click += new System.EventHandler(this.btnGetToken_Click);
-            // 
-            // lblToken
-            // 
-            this.lblToken.AutoSize = true;
-            this.lblToken.Location = new System.Drawing.Point(438, 8);
-            this.lblToken.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblToken.Name = "lblToken";
-            this.lblToken.Size = new System.Drawing.Size(49, 20);
-            this.lblToken.TabIndex = 7;
-            this.lblToken.Text = "token";
-            this.lblToken.Visible = false;
             // 
             // btnExport
             // 
@@ -154,6 +131,7 @@
             // 
             // cmbSubscriptions
             // 
+            this.cmbSubscriptions.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbSubscriptions.Enabled = false;
             this.cmbSubscriptions.FormattingEnabled = true;
             this.cmbSubscriptions.ImeMode = System.Windows.Forms.ImeMode.Off;
@@ -185,16 +163,6 @@
             this.btnOptions.Text = "Options...";
             this.btnOptions.UseVisualStyleBackColor = true;
             this.btnOptions.Click += new System.EventHandler(this.btnOptions_Click);
-            // 
-            // txtTenantID
-            // 
-            this.txtTenantID.DataBindings.Add(new System.Windows.Forms.Binding("Text", global::MIGAZ.app.Default, "TenantId", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
-            this.txtTenantID.Location = new System.Drawing.Point(202, 32);
-            this.txtTenantID.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.txtTenantID.Name = "txtTenantID";
-            this.txtTenantID.Size = new System.Drawing.Size(318, 26);
-            this.txtTenantID.TabIndex = 0;
-            this.txtTenantID.Text = global::MIGAZ.app.Default.TenantId;
             // 
             // lvwVirtualNetworks
             // 
@@ -270,11 +238,21 @@
             this.colVMName.Text = "Virtual Machine";
             this.colVMName.Width = 230;
             // 
+            // lblSignInText
+            // 
+            this.lblSignInText.AutoSize = true;
+            this.lblSignInText.Location = new System.Drawing.Point(260, 27);
+            this.lblSignInText.Name = "lblSignInText";
+            this.lblSignInText.Size = new System.Drawing.Size(106, 20);
+            this.lblSignInText.TabIndex = 37;
+            this.lblSignInText.Text = "Not Signed In";
+            // 
             // Window
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1434, 877);
+            this.Controls.Add(this.lblSignInText);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
@@ -289,10 +267,7 @@
             this.Controls.Add(this.btnChoosePath);
             this.Controls.Add(this.txtDestinationFolder);
             this.Controls.Add(this.lblOutputFolder);
-            this.Controls.Add(this.lblToken);
             this.Controls.Add(this.btnGetToken);
-            this.Controls.Add(this.lblTenantID);
-            this.Controls.Add(this.txtTenantID);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
@@ -309,11 +284,7 @@
         }
 
         #endregion
-
-        private System.Windows.Forms.TextBox txtTenantID;
-        private System.Windows.Forms.Label lblTenantID;
         private System.Windows.Forms.Button btnGetToken;
-        private System.Windows.Forms.Label lblToken;
         private System.Windows.Forms.Button btnExport;
         private System.Windows.Forms.Button btnChoosePath;
         private System.Windows.Forms.TextBox txtDestinationFolder;
@@ -332,6 +303,7 @@
         private System.Windows.Forms.ListView lvwVirtualMachines;
         private System.Windows.Forms.ColumnHeader colCloudService;
         private System.Windows.Forms.ColumnHeader colVMName;
+        private System.Windows.Forms.Label lblSignInText;
     }
 }
 
