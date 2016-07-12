@@ -94,6 +94,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>app.settings</DependentUpon>
     </Compile>
+    <Compile Include="Generator\AsmRetriever.cs" />
     <Compile Include="Classes\Tool.cs" />
     <Compile Include="Classes\ARM.cs" />
     <Compile Include="Forms\Options.cs">
@@ -108,6 +109,13 @@
     <Compile Include="Forms\Window.Designer.cs">
       <DependentUpon>Window.cs</DependentUpon>
     </Compile>
+    <Compile Include="Generator\AsmArtefacts.cs" />
+    <Compile Include="Generator\CloudServiceVM.cs" />
+    <Compile Include="Generator\FileLogProvider.cs" />
+    <Compile Include="Generator\ILogProvider.cs" />
+    <Compile Include="Generator\IStatusProvider.cs" />
+    <Compile Include="Generator\TemplateGenerator.cs" />
+    <Compile Include="Generator\UIStatusProvider.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Forms\Options.resx">
