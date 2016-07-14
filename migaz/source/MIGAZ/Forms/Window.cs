@@ -9,8 +9,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.Text;
 using System.Reflection;
-using MIGAZ.Classes;
-using MIGAZ.Classes.ARM;
+using MIGAZ.Models;
 using MIGAZ.Generator;
 
 namespace MIGAZ
@@ -20,6 +19,7 @@ namespace MIGAZ
         private string subscriptionid;
         private Dictionary<string, string> subscriptionsAndTenants;
         private AsmRetriever _asmRetriever;
+        private TemplateGenerator _templateGenerator;
         private ILogProvider _logProvider;
         private IStatusProvider _statusProvider;
 
@@ -29,6 +29,7 @@ namespace MIGAZ
             _logProvider = new FileLogProvider();
             _statusProvider = new UIStatusProvider(lblStatus);
             _asmRetriever = new AsmRetriever(_logProvider, _statusProvider);
+            _templateGenerator = new TemplateGenerator(_logProvider, _statusProvider, _asmRetriever);
         }
 
         private void Window_Load(object sender, EventArgs e)
@@ -225,9 +226,18 @@ namespace MIGAZ
                         VirtualMachine = listItem.SubItems[1].Text,
                     });
             }
-            var generator = new TemplateGenerator(_logProvider, _statusProvider);
-            generator.GenerateTemplate(subscriptionsAndTenants[subscriptionid], subscriptionid, artefacts, txtDestinationFolder.Text);
 
+            if (!Directory.Exists(txtDestinationFolder.Text))
+            {
+                MessageBox.Show("The chosen output folder does not exist.", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else
+            {
+                var templateWriter = new StreamWriter(Path.Combine(txtDestinationFolder.Text, "export.json"));
+                var blobDetailWriter = new StreamWriter(Path.Combine(txtDestinationFolder.Text, "copyblobdetails.json"));
+                _templateGenerator.GenerateTemplate(subscriptionsAndTenants[subscriptionid], subscriptionid, artefacts, templateWriter, blobDetailWriter);
+                MessageBox.Show("Template has been generated successfully.", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
         }
 
         

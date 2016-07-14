@@ -4,7 +4,7 @@
   <description asmv2:iconFile="Images\Azure SDK.ico" xmlns="urn:schemas-microsoft-com:asm.v1" />
   <application />
   <entryPoint>
-    <assemblyIdentity name="migAz" version="1.3.1.1" language="neutral" processorArchitecture="msil" />
+    <assemblyIdentity name="migAz" version="1.3.1.2" language="neutral" processorArchitecture="msil" />
     <commandLine file="migAz.exe" parameters="" />
   </entryPoint>
   <trustInfo>
@@ -67,14 +67,14 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="migAz.exe" size="238592">
-      <assemblyIdentity name="migAz" version="1.3.1.1" language="neutral" processorArchitecture="msil" />
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="migAz.exe" size="239104">
+      <assemblyIdentity name="migAz" version="1.3.1.2" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>3SUOFw8r6xinhOcH4UW5//CYgx/8qtp3hDMsVsmSzyE=</dsig:DigestValue>
+        <dsig:DigestValue>wFfHn/mRSv3ct3s7DqBu21kex4y9tSDEI288ZnWbL8s=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>

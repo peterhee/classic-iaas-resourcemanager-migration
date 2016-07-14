@@ -11,17 +11,17 @@ using System.Xml;
 
 namespace MIGAZ.Generator
 {
-    class AsmRetriever
+    public class AsmRetriever
     {
         private ILogProvider _logProvider;
         private IStatusProvider _statusProvider;
 
-        internal AsmRetriever(ILogProvider logProvider, IStatusProvider statusProvider)
+        public AsmRetriever(ILogProvider logProvider, IStatusProvider statusProvider)
         {
             _logProvider = logProvider;
             _statusProvider = statusProvider;
         }
-        public XmlNodeList GetAzureASMResources(string resourceType, string subscriptionId, Hashtable info, string token)
+        public virtual XmlNodeList GetAzureASMResources(string resourceType, string subscriptionId, Hashtable info, string token)
         {
             _logProvider.WriteLog("GetAzureASMResources", "Start");
 
@@ -179,7 +179,7 @@ namespace MIGAZ.Generator
             File.AppendAllText(logfilepath, text);
         }
 
-        internal void GetVMDetails(string subscriptionId, string cloudServiceName, string virtualMachineName, string token, out string deploymentName, out string virtualNetworkName, out string loadBalancerName)
+        public virtual void GetVMDetails(string subscriptionId, string cloudServiceName, string virtualMachineName, string token, out string deploymentName, out string virtualNetworkName, out string loadBalancerName)
         {
             Hashtable cloudserviceinfo = new Hashtable();
             cloudserviceinfo.Add("name", cloudServiceName);

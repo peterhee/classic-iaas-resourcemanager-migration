@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace MIGAZ.Generator
+namespace MIGAZ.Models
 {
     public class AsmArtefacts
     {

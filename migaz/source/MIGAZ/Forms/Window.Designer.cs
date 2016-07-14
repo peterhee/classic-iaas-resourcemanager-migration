@@ -135,7 +135,7 @@
             this.cmbSubscriptions.Enabled = false;
             this.cmbSubscriptions.FormattingEnabled = true;
             this.cmbSubscriptions.ImeMode = System.Windows.Forms.ImeMode.Off;
-            this.cmbSubscriptions.Location = new System.Drawing.Point(720, 31);
+            this.cmbSubscriptions.Location = new System.Drawing.Point(720, 24);
             this.cmbSubscriptions.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.cmbSubscriptions.MaxDropDownItems = 15;
             this.cmbSubscriptions.Name = "cmbSubscriptions";
@@ -146,7 +146,7 @@
             // lblSubscriptions
             // 
             this.lblSubscriptions.AutoSize = true;
-            this.lblSubscriptions.Location = new System.Drawing.Point(606, 35);
+            this.lblSubscriptions.Location = new System.Drawing.Point(606, 28);
             this.lblSubscriptions.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblSubscriptions.Name = "lblSubscriptions";
             this.lblSubscriptions.Size = new System.Drawing.Size(105, 20);

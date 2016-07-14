@@ -1,6 +1,6 @@
 ﻿using Microsoft.IdentityModel.Clients.ActiveDirectory;
-using MIGAZ.Classes;
-using MIGAZ.Classes.ARM;
+using MIGAZ.Models;
+using MIGAZ.Models.ARM;
 using Newtonsoft.Json;
 using System;
 using System.Collections;
@@ -24,15 +24,15 @@ namespace MIGAZ.Generator
         private List<CopyBlobDetail> _copyBlobDetails;
         private Dictionary<string, string> _processedItems;
 
-        public TemplateGenerator(ILogProvider logProvider, IStatusProvider statusProvider)
+        public TemplateGenerator(ILogProvider logProvider, IStatusProvider statusProvider, AsmRetriever asmRetriever)
         {
             _logProvider = logProvider;
             _statusProvider = statusProvider;
-            _asmRetriever = new AsmRetriever(_logProvider, _statusProvider);
+            _asmRetriever = asmRetriever;
         }
-        public void GenerateTemplate(string tenantId, string subscriptionId, AsmArtefacts artefacts, string outputPath)
+        public void GenerateTemplate(string tenantId, string subscriptionId, AsmArtefacts artefacts, StreamWriter templateWriter, StreamWriter blobDetailWriter)
         {
-            _logProvider.WriteLog("Export_Click", "Start");
+            _logProvider.WriteLog("GenerateTemplate", "Start");
 
             app.Default.ExecutionId = Guid.NewGuid().ToString();
             _resources = new List<Resource>();
@@ -43,7 +43,7 @@ namespace MIGAZ.Generator
 
             var token = GetToken(tenantId, PromptBehavior.Auto);
 
-            _logProvider.WriteLog("Export_Click", "Start processing selected virtual networks");
+            _logProvider.WriteLog("GenerateTemplate", "Start processing selected virtual networks");
             // process selected virtual networks
             foreach (var virtualnetworkname in artefacts.VirtualNetworks)
             {
@@ -57,9 +57,9 @@ namespace MIGAZ.Generator
                     }
                 }
             }
-            _logProvider.WriteLog("Export_Click", "End processing selected virtual networks");
+            _logProvider.WriteLog("GenerateTemplate", "End processing selected virtual networks");
 
-            _logProvider.WriteLog("Export_Click", "Start processing selected storage accounts");
+            _logProvider.WriteLog("GenerateTemplate", "Start processing selected storage accounts");
 
             // process selected storage accounts
             foreach (var storageaccountname in artefacts.StorageAccounts)
@@ -72,9 +72,9 @@ namespace MIGAZ.Generator
                 XmlNode storageaccount = _asmRetriever.GetAzureASMResources("StorageAccount", subscriptionId, storageaccountinfo, token)[0];
                 BuildStorageAccountObject(storageaccount);
             }
-            _logProvider.WriteLog("Export_Click", "End processing selected storage accounts");
+            _logProvider.WriteLog("GenerateTemplate", "End processing selected storage accounts");
 
-            _logProvider.WriteLog("Export_Click", "Start processing selected cloud services and virtual machines");
+            _logProvider.WriteLog("GenerateTemplate", "Start processing selected cloud services and virtual machines");
 
             // process selected cloud services and virtual machines
             foreach (var cloudServiceVM in artefacts.VirtualMachines)
@@ -121,7 +121,7 @@ namespace MIGAZ.Generator
                 // process virtual machine
                 BuildVirtualMachineObject(subscriptionId, virtualmachine, virtualmachineinfo, networkinterfaces, token);
             }
-            _logProvider.WriteLog("Export_Click", "End processing selected cloud services and virtual machines");
+            _logProvider.WriteLog("GenerateTemplate", "End processing selected cloud services and virtual machines");
 
             Template template = new Template();
             template.resources = _resources;
@@ -130,23 +130,23 @@ namespace MIGAZ.Generator
             // save JSON template
             string jsontext = JsonConvert.SerializeObject(template, Newtonsoft.Json.Formatting.Indented, new JsonSerializerSettings { NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore });
             jsontext = jsontext.Replace("schemalink", "$schema");
-            WriteFile(outputPath, "export.json", jsontext);
-            _logProvider.WriteLog("Export_Click", "Write file export.json");
+            WriteStream(templateWriter, jsontext);
+            _logProvider.WriteLog("GenerateTemplate", "Write file export.json");
 
             // save blob copy details file
             jsontext = JsonConvert.SerializeObject(_copyBlobDetails, Newtonsoft.Json.Formatting.Indented, new JsonSerializerSettings { NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore });
-            WriteFile(outputPath, "copyblobdetails.json", jsontext);
-            _logProvider.WriteLog("Export_Click", "Write file copyblobdetails.json");
+            WriteStream(blobDetailWriter, jsontext);
+            _logProvider.WriteLog("GenerateTemplate", "Write file copyblobdetails.json");
 
             // post Telemetry Record to ASMtoARMToolAPI
             if (app.Default.AllowTelemetry)
             {
-                PostTelemetryRecord(subscriptionId);
+                PostTelemetryRecord(tenantId, subscriptionId);
             }
 
             _statusProvider.UpdateStatus("Ready");
 
-            _logProvider.WriteLog("Export_Click", "End");
+            _logProvider.WriteLog("GenerateTemplate", "End");
         }
 
         private void BuildPublicIPAddressObject(ref NetworkInterface networkinterface)
@@ -1322,9 +1322,10 @@ namespace MIGAZ.Generator
 
         }
 
-        private void WriteFile(string outputPath, string filename, string text)
+        private void WriteStream(StreamWriter writer, string text)
         {
-            File.WriteAllText(Path.Combine(outputPath, filename), text);
+            writer.Write(text);
+            writer.Close();
         }
 
         private bool GetProcessedItem(string processeditem)
@@ -1339,12 +1340,12 @@ namespace MIGAZ.Generator
             }
         }
 
-        private void PostTelemetryRecord(string subscriptionId)
+        private void PostTelemetryRecord(string tenantId, string subscriptionId)
         {
             TelemetryRecord telemetryrecord = new TelemetryRecord();
             telemetryrecord.ExecutionId = Guid.Parse(app.Default.ExecutionId);
             telemetryrecord.SubscriptionId = new Guid(subscriptionId);
-            telemetryrecord.TenantId = String.Empty;
+            telemetryrecord.TenantId = tenantId;
             telemetryrecord.ProcessedResources = _processedItems;
 
             string jsontext = JsonConvert.SerializeObject(telemetryrecord, Newtonsoft.Json.Formatting.Indented, new JsonSerializerSettings { NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore });

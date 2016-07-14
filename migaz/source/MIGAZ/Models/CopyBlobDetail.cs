@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MIGAZ.Classes
+namespace MIGAZ.Models
 {
     public class CopyBlobDetail
     {
@@ -24,11 +24,4 @@ namespace MIGAZ.Classes
         public string SnapshotTime = "";
     }
 
-    public class TelemetryRecord
-    {
-        public Guid ExecutionId;
-        public string TenantId;
-        public System.Guid SubscriptionId;
-        public Dictionary<string, string> ProcessedResources;
-    }
 }
