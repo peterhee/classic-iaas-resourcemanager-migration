@@ -1,12 +1,10 @@
 C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\obj\Debug\MIGAZ.Tests.csprojResolveAssemblyReference.cache
 C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\MIGAZ.Tests.dll
 C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\MIGAZ.Tests.pdb
-C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll
 C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\migAz.exe
 C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\Microsoft.IdentityModel.Clients.ActiveDirectory.dll
 C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\Newtonsoft.Json.dll
 C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\migAz.pdb
-C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\Microsoft.VisualStudio.QualityTools.UnitTestFramework.xml
 C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\Microsoft.IdentityModel.Clients.ActiveDirectory.xml
 C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\obj\Debug\MIGAZ.Tests.dll
 C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\obj\Debug\MIGAZ.Tests.pdb

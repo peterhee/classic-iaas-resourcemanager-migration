@@ -14,36 +14,8 @@ namespace MIGAZ.Tests
     [TestClass]
     public class StorageTests
     {
-        private const string _tenantId = "11111111-1111-1111-1111-111111111111";
-        private const string _subscriptionId = "22222222-2222-2222-2222-222222222222";
 
-        private void SetupObjects(out FakeAsmRetriever asmRetreiver, out TemplateGenerator templateGenerator)
-        {
-            ILogProvider logProvider = new FakeLogProvider();
-            IStatusProvider statusProvider = new FakeStatusProvider();
-            ITelemetryProvider telemetryProvider = new FakeTelemetryProvider();
-            ITokenProvider tokenProvider = new FakeTokenProvider();
-            asmRetreiver = new FakeAsmRetriever(logProvider, statusProvider);
-            templateGenerator = new TemplateGenerator(logProvider, statusProvider, telemetryProvider, tokenProvider, asmRetreiver);
-        }
-
-        private JObject GetJsonData(MemoryStream closedStream)
-        {
-            var newStream = new MemoryStream(closedStream.ToArray());
-            var reader = new StreamReader(newStream);
-            var templateText = reader.ReadToEnd();
-            return JObject.Parse(templateText);
-        }
-
-        [TestMethod]
-        public void ValidSingleStorageAccount()
-        {
-            FakeAsmRetriever fakeAsmRetriever;
-            TemplateGenerator templateGenerator;
-            SetupObjects(out fakeAsmRetriever, out templateGenerator);
-
-            var asmStorageAccountXml = new XmlDocument();
-            asmStorageAccountXml.LoadXml(@"<StorageService>
+        private const string sampleAsmStorageInfo = @"<StorageService>
   <Url>storage-account-request-uri</Url>
   <ServiceName>mystorage</ServiceName>
   <StorageServiceProperties>
@@ -88,9 +60,17 @@ namespace MIGAZ.Tests
   <Capabilities>
     <Capability>storage-account-capability</Capability>
   </Capabilities>
-</StorageService>
+</StorageService>";
 
-");
+        [TestMethod]
+        public void ValidateSingleStorageAccount()
+        {
+            FakeAsmRetriever fakeAsmRetriever;
+            TemplateGenerator templateGenerator;
+            TestHelper.SetupObjects(out fakeAsmRetriever, out templateGenerator);
+
+            var asmStorageAccountXml = new XmlDocument();
+            asmStorageAccountXml.LoadXml(sampleAsmStorageInfo);
             var info = new Hashtable();
             info["name"] = "mystorage";
             fakeAsmRetriever.SetResponse("StorageAccount", info, asmStorageAccountXml.SelectNodes("StorageService"));
@@ -100,9 +80,9 @@ namespace MIGAZ.Tests
             var artefacts = new AsmArtefacts();
             artefacts.StorageAccounts.Add("mystorage");
 
-            templateGenerator.GenerateTemplate(_tenantId, _subscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
+            templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
 
-            JObject templateJson = GetJsonData(templateStream);
+            JObject templateJson = TestHelper.GetJsonData(templateStream);
             Assert.AreEqual(1, templateJson["resources"].Children().Count());
             var resource = templateJson["resources"].Single();
             Assert.AreEqual("Microsoft.Storage/storageAccounts", resource["type"].Value<string>());

@@ -216,7 +216,7 @@ namespace MIGAZ.Generator
 
             AvailabilitySet availabilityset = new AvailabilitySet();
 
-            availabilityset.name = "defaultAS";
+            availabilityset.name = cloudservicename + "-defaultAS";
             if (virtualmachine.SelectSingleNode("AvailabilitySetName") != null)
             {
                 availabilityset.name = virtualmachine.SelectSingleNode("AvailabilitySetName").InnerText;
@@ -1091,7 +1091,7 @@ namespace MIGAZ.Generator
             string[] splitarray = olddiskurl.Split(new char[] { '/', '.' });
             string oldstorageaccountname = splitarray[2];
             string newstorageaccountname = oldstorageaccountname + app.Default.UniquenessSuffix;
-            string newdiskurl = olddiskurl.Replace(oldstorageaccountname, newstorageaccountname);
+            string newdiskurl = olddiskurl.Replace(oldstorageaccountname + ".", newstorageaccountname + ".");
 
             Hashtable storageaccountdependencies = new Hashtable();
             storageaccountdependencies.Add(newstorageaccountname, "");
@@ -1203,7 +1203,7 @@ namespace MIGAZ.Generator
                 splitarray = olddiskurl.Split(new char[] { '/', '.' });
                 oldstorageaccountname = splitarray[2];
                 newstorageaccountname = oldstorageaccountname + app.Default.UniquenessSuffix;
-                newdiskurl = olddiskurl.Replace(oldstorageaccountname, newstorageaccountname);
+                newdiskurl = olddiskurl.Replace(oldstorageaccountname + ".", newstorageaccountname + ".");
 
                 // if the tool is configured to create new VMs with empty data disks
                 if (app.Default.BuildEmpty)
@@ -1258,7 +1258,7 @@ namespace MIGAZ.Generator
             List<string> dependson = new List<string>();
             dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/networkInterfaces/" + networkinterfacename + "')]");
 
-            string availabilitysetname = "defaultAS";
+            string availabilitysetname = virtualmachineinfo["cloudservicename"] + "-defaultAS";
             if (resource.SelectSingleNode("AvailabilitySetName") != null)
             {
                 availabilitysetname = resource.SelectSingleNode("AvailabilitySetName").InnerText;
