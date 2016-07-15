@@ -98,7 +98,7 @@ or
 
 ![migAz main window](./media/virtual-machines-windows-migration-migaz/main.png)
 
-**Step 1:** The tool requires the Tenant ID or Domain Name (ex: contoso.onmicrosoft.com) of the Tenant before listing the Subscriptions. Type it in the Tenant textbox of the tool and hit on the “Get Subscriptions” button. The “Get Subscription” button will launch the Azure Authentication page and user has to enter the credentials to access the source subscription.
+**Step 1:** Click the “Sign In” button. The “Sign In” button will launch the Azure Authentication page and user has to enter the credentials to access the source subscription.
 
 ![migAz main window](./media/virtual-machines-windows-migration-migaz/login.png)
 
