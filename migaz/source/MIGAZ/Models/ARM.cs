@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System;
 
-namespace MIGAZ.Classes.ARM
+namespace MIGAZ.Models.ARM
 {
     public class VirtualNetworkGateway : Resource
     {
