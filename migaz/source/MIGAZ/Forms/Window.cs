@@ -29,7 +29,9 @@ namespace MIGAZ
             _logProvider = new FileLogProvider();
             _statusProvider = new UIStatusProvider(lblStatus);
             _asmRetriever = new AsmRetriever(_logProvider, _statusProvider);
-            _templateGenerator = new TemplateGenerator(_logProvider, _statusProvider, _asmRetriever);
+            var tokenProvider = new InteractiveTokenProvider();
+            var telemetryProvider = new CloudTelemetryProvider();
+            _templateGenerator = new TemplateGenerator(_logProvider, _statusProvider, telemetryProvider, tokenProvider, _asmRetriever);
         }
 
         private void Window_Load(object sender, EventArgs e)
@@ -132,24 +134,14 @@ namespace MIGAZ
                         {
                             if (hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectSingleNode("RoleType").InnerText == "PersistentVMRole")
                             {
-                                string virtualnetworkname = "empty";
-                                if (hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectSingleNode("VirtualNetworkName") != null)
-                                {
-                                    virtualnetworkname = hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectSingleNode("VirtualNetworkName").InnerText;
-                                }
-                                string deploymentname = hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectSingleNode("Name").InnerText;
+                               
                                 XmlNodeList roles = hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectNodes("RoleList/Role");
-                                // GetVMLBMapping is necessary because a Cloud Service can have multiple availability sets
-                                // On ARM, a load balancer can only be attached to 1 availability set
-                                // Because of this, if multiple availability sets exist, we are breaking the cloud service in multiple load balancers
-                                //     to respect all availability sets
-                                Dictionary<string, string> vmlbmapping = _asmRetriever.GetVMLBMapping(cloudservicename, roles);
+
                                 foreach (XmlNode role in roles)
                                 {
                                     string virtualmachinename = role.SelectSingleNode("RoleName").InnerText;
-                                    string loadbalancername = vmlbmapping[virtualmachinename];
                                     var listItem = new ListViewItem(cloudservicename);
-                                    listItem.SubItems.AddRange(new[] { virtualmachinename, deploymentname, virtualnetworkname, loadbalancername });
+                                    listItem.SubItems.AddRange(new[] { virtualmachinename });
                                     lvwVirtualMachines.Items.Add(listItem);
                                     Application.DoEvents();
                                 }

@@ -18,16 +18,20 @@ namespace MIGAZ.Generator
     {
         private ILogProvider _logProvider;
         private IStatusProvider _statusProvider;
+        private ITelemetryProvider _telemetryProvider;
+        private ITokenProvider _tokenProvider;
         private AsmRetriever _asmRetriever;
         private List<Resource> _resources;
         private Dictionary<string, Parameter> _parameters;
         private List<CopyBlobDetail> _copyBlobDetails;
         private Dictionary<string, string> _processedItems;
 
-        public TemplateGenerator(ILogProvider logProvider, IStatusProvider statusProvider, AsmRetriever asmRetriever)
+        public TemplateGenerator(ILogProvider logProvider, IStatusProvider statusProvider, ITelemetryProvider telemetryProvider, ITokenProvider tokenProvider, AsmRetriever asmRetriever)
         {
             _logProvider = logProvider;
             _statusProvider = statusProvider;
+            _telemetryProvider = telemetryProvider;
+            _tokenProvider = tokenProvider;
             _asmRetriever = asmRetriever;
         }
         public void GenerateTemplate(string tenantId, string subscriptionId, AsmArtefacts artefacts, StreamWriter templateWriter, StreamWriter blobDetailWriter)
@@ -41,7 +45,7 @@ namespace MIGAZ.Generator
             _processedItems = new Dictionary<string, string>();
             _copyBlobDetails = new List<CopyBlobDetail>();
 
-            var token = GetToken(tenantId, PromptBehavior.Auto);
+            var token = _tokenProvider.GetToken(tenantId);
 
             _logProvider.WriteLog("GenerateTemplate", "Start processing selected virtual networks");
             // process selected virtual networks
@@ -141,7 +145,7 @@ namespace MIGAZ.Generator
             // post Telemetry Record to ASMtoARMToolAPI
             if (app.Default.AllowTelemetry)
             {
-                PostTelemetryRecord(tenantId, subscriptionId);
+                _telemetryProvider.PostTelemetryRecord(tenantId, subscriptionId, _processedItems);
             }
 
             _statusProvider.UpdateStatus("Ready");
@@ -1306,22 +1310,6 @@ namespace MIGAZ.Generator
             _logProvider.WriteLog("BuildStorageAccountObject", "End");
         }
 
-        private string GetToken(string tenantId, PromptBehavior promptBehavior)
-        {
-            AuthenticationContext context = new AuthenticationContext("https://login.windows.net/" + tenantId);
-
-            AuthenticationResult result = null;
-            result = context.AcquireToken("https://management.core.windows.net/", app.Default.ClientId, new Uri(app.Default.ReturnURL), promptBehavior);
-            if (result == null)
-            {
-                throw new InvalidOperationException("Failed to obtain the token");
-            }
-           
-
-            return result.AccessToken;
-
-        }
-
         private void WriteStream(StreamWriter writer, string text)
         {
             writer.Write(text);
@@ -1340,33 +1328,7 @@ namespace MIGAZ.Generator
             }
         }
 
-        private void PostTelemetryRecord(string tenantId, string subscriptionId)
-        {
-            TelemetryRecord telemetryrecord = new TelemetryRecord();
-            telemetryrecord.ExecutionId = Guid.Parse(app.Default.ExecutionId);
-            telemetryrecord.SubscriptionId = new Guid(subscriptionId);
-            telemetryrecord.TenantId = tenantId;
-            telemetryrecord.ProcessedResources = _processedItems;
-
-            string jsontext = JsonConvert.SerializeObject(telemetryrecord, Newtonsoft.Json.Formatting.Indented, new JsonSerializerSettings { NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore });
-
-            ASCIIEncoding encoding = new ASCIIEncoding();
-            byte[] data = encoding.GetBytes(jsontext);
-
-            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("https://asmtoarmtoolapi.azurewebsites.net/api/telemetry");
-            request.Method = "POST";
-            request.ContentType = "application/json";
-            request.ContentLength = data.Length;
-
-            Stream stream = request.GetRequestStream();
-            stream.Write(data, 0, data.Length);
-            stream.Close();
-
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-            string result = new StreamReader(response.GetResponseStream()).ReadToEnd();
-
-            //TelemetryRecord mytelemetry = (TelemetryRecord)JsonConvert.DeserializeObject(jsontext, typeof(TelemetryRecord));
-        }
+        
 
         // convert an hex string into byte array
         public static byte[] StrToByteArray(string str)
