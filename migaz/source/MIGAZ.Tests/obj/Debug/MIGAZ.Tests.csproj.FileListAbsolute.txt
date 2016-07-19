@@ -20,3 +20,14 @@ Y:\GitHub\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\De
 Y:\GitHub\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\obj\Debug\MIGAZ.Tests.csprojResolveAssemblyReference.cache
 Y:\GitHub\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\obj\Debug\MIGAZ.Tests.dll
 Y:\GitHub\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\obj\Debug\MIGAZ.Tests.pdb
+C:\GitHub\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\MIGAZ.Tests.dll
+C:\GitHub\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\MIGAZ.Tests.pdb
+C:\GitHub\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\migAz.exe
+C:\GitHub\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\Newtonsoft.Json.dll
+C:\GitHub\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\Microsoft.IdentityModel.Clients.ActiveDirectory.dll
+C:\GitHub\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\migAz.pdb
+C:\GitHub\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\Newtonsoft.Json.xml
+C:\GitHub\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\Microsoft.IdentityModel.Clients.ActiveDirectory.xml
+C:\GitHub\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\obj\Debug\MIGAZ.Tests.csprojResolveAssemblyReference.cache
+C:\GitHub\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\obj\Debug\MIGAZ.Tests.dll
+C:\GitHub\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\obj\Debug\MIGAZ.Tests.pdb
