@@ -67,14 +67,14 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="migAz.exe" size="241152">
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="migAz.exe" size="242688">
       <assemblyIdentity name="migAz" version="1.4.0.1" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>uvbB25r5+L3Bxig4P2vNgfxV7z5gJcCTH+cVaiLjGmY=</dsig:DigestValue>
+        <dsig:DigestValue>B5Uy+YcHatr3NKSnorkipHRekuCWvvSFEuETvmWtlRQ=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>

@@ -73,7 +73,7 @@ namespace MIGAZ.Tests
             asmStorageAccountXml.LoadXml(sampleAsmStorageInfo);
             var info = new Hashtable();
             info["name"] = "mystorage";
-            fakeAsmRetriever.SetResponse("StorageAccount", info, asmStorageAccountXml.SelectNodes("StorageService"));
+            fakeAsmRetriever.SetResponse("StorageAccount", info, asmStorageAccountXml);
             
             var templateStream = new MemoryStream();
             var blobDetailStream = new MemoryStream();

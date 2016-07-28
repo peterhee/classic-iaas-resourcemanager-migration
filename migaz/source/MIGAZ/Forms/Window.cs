@@ -56,7 +56,7 @@ namespace MIGAZ
             string token = GetToken("common", PromptBehavior.Always, true);
 
             subscriptionsAndTenants = new Dictionary<string, string>();
-            foreach (XmlNode subscription in _asmRetriever.GetAzureASMResources("Subscriptions", null, null, token))
+            foreach (XmlNode subscription in _asmRetriever.GetAzureASMResources("Subscriptions", null, null, token).SelectNodes("//Subscription"))
             {
                 cmbSubscriptions.Items.Add(subscription.SelectSingleNode("SubscriptionID").InnerText + " | " + subscription.SelectSingleNode("SubscriptionName").InnerText);
                 subscriptionsAndTenants.Add(subscription.SelectSingleNode("SubscriptionID").InnerText, subscription.SelectSingleNode("AADTenantID").InnerText);
@@ -108,34 +108,34 @@ namespace MIGAZ
                 subscriptionid = cmbSubscriptions.SelectedItem.ToString().Split(new char[] {'|'})[0].ToString().Trim();
                 var token = GetToken(subscriptionsAndTenants[subscriptionid], PromptBehavior.Auto);
 
-                foreach (XmlNode virtualnetworksite in _asmRetriever.GetAzureASMResources("VirtualNetworks", subscriptionid, null, token))
+                foreach (XmlNode virtualnetworksite in _asmRetriever.GetAzureASMResources("VirtualNetworks", subscriptionid, null, token).SelectNodes("//VirtualNetworkSite"))
                 {
                     lvwVirtualNetworks.Items.Add(virtualnetworksite.SelectSingleNode("Name").InnerText);
                     Application.DoEvents();
                 }
 
-                foreach (XmlNode storageaccount in _asmRetriever.GetAzureASMResources("StorageAccounts", subscriptionid, null, token))
+                foreach (XmlNode storageaccount in _asmRetriever.GetAzureASMResources("StorageAccounts", subscriptionid, null, token).SelectNodes("//StorageService"))
                 {
                     lvwStorageAccounts.Items.Add(storageaccount.SelectSingleNode("ServiceName").InnerText);
                     Application.DoEvents();
                 }
 
-                foreach (XmlNode cloudservice in _asmRetriever.GetAzureASMResources("CloudServices", subscriptionid, null, token))
+                foreach (XmlNode cloudservice in _asmRetriever.GetAzureASMResources("CloudServices", subscriptionid, null, token).SelectNodes("//HostedService"))
                 {
                     string cloudservicename = cloudservice.SelectSingleNode("ServiceName").InnerText;
 
                     Hashtable cloudserviceinfo = new Hashtable();
                     cloudserviceinfo.Add("name", cloudservicename);
 
-                    XmlNodeList hostedservice = _asmRetriever.GetAzureASMResources("CloudService", subscriptionid, cloudserviceinfo, token);
-                    if (hostedservice[0].SelectNodes("Deployments/Deployment").Count > 0)
+                    XmlDocument hostedservice = _asmRetriever.GetAzureASMResources("CloudService", subscriptionid, cloudserviceinfo, token);
+                    if (hostedservice.SelectNodes("//Deployments/Deployment").Count > 0)
                     {
-                        if (hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectNodes("RoleType").Count > 0)
+                        if (hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectNodes("RoleType").Count > 0)
                         {
-                            if (hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectSingleNode("RoleType").InnerText == "PersistentVMRole")
+                            if (hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectSingleNode("RoleType").InnerText == "PersistentVMRole")
                             {
                                
-                                XmlNodeList roles = hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectNodes("RoleList/Role");
+                                XmlNodeList roles = hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectNodes("RoleList/Role");
 
                                 foreach (XmlNode role in roles)
                                 {

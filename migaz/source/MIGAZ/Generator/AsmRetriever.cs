@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
+using System.Xml.Linq;
 
 namespace MIGAZ.Generator
 {
@@ -21,7 +22,7 @@ namespace MIGAZ.Generator
             _logProvider = logProvider;
             _statusProvider = statusProvider;
         }
-        public virtual XmlNodeList GetAzureASMResources(string resourceType, string subscriptionId, Hashtable info, string token)
+        public virtual XmlDocument GetAzureASMResources(string resourceType, string subscriptionId, Hashtable info, string token)
         {
             _logProvider.WriteLog("GetAzureASMResources", "Start");
 
@@ -134,26 +135,12 @@ namespace MIGAZ.Generator
 
             if (xml != "")
             {
-                xml = xml.Replace(@"xmlns=""http://schemas.microsoft.com/windowsazure""", "");
-                xml = xml.Replace(@"xmlns:i=""http://www.w3.org/2001/XMLSchema-instance""", "");
-                xml = xml.Replace(@"i:nil=""true""", "");
-                xml = xml.Replace(@"i:type=", "type=");
-                XmlDocument xmlDoc = new XmlDocument();
-
-                if (xml[0].ToString() != "<")
-                {
-                    xml = "<data>" + xml + "</data>";
-                }
-
-                xmlDoc.LoadXml(xml);
+                XmlDocument xmlDoc = RemoveXmlns(xml);
 
                 _logProvider.WriteLog("GetAzureASMResources", "End");
                 writeXMLtoFile(url, xml);
 
-                if (node == "")
-                { return xmlDoc.ChildNodes; }
-                else
-                { return xmlDoc.SelectNodes(node); }
+                return xmlDoc;
             }
             else
             {
@@ -163,9 +150,23 @@ namespace MIGAZ.Generator
 
                 _logProvider.WriteLog("GetAzureASMResources", "End");
                 writeXMLtoFile(url, "");
-                return xmlDoc.SelectNodes("Empty");
+                return null;
             }
 
+        }
+
+        private XmlDocument RemoveXmlns(String xml)
+        {
+            XDocument d = XDocument.Parse(xml);
+            d.Root.Descendants().Attributes().Where(x => x.IsNamespaceDeclaration).Remove();
+
+            foreach (var elem in d.Descendants())
+                elem.Name = elem.Name.LocalName;
+
+            var xmlDocument = new XmlDocument();
+            xmlDocument.Load(d.CreateReader());
+
+            return xmlDocument;
         }
 
         private void writeXMLtoFile(string url, string xml)
@@ -184,20 +185,20 @@ namespace MIGAZ.Generator
             Hashtable cloudserviceinfo = new Hashtable();
             cloudserviceinfo.Add("name", cloudServiceName);
 
-            XmlNodeList hostedservice = GetAzureASMResources("CloudService", subscriptionId, cloudserviceinfo, token);
-            if (hostedservice[0].SelectNodes("Deployments/Deployment").Count > 0)
+            XmlDocument hostedservice = GetAzureASMResources("CloudService", subscriptionId, cloudserviceinfo, token);
+            if (hostedservice.SelectNodes("//Deployments/Deployment").Count > 0)
             {
-                if (hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectNodes("RoleType").Count > 0)
+                if (hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectNodes("RoleType").Count > 0)
                 {
-                    if (hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectSingleNode("RoleType").InnerText == "PersistentVMRole")
+                    if (hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectSingleNode("RoleType").InnerText == "PersistentVMRole")
                     {
                         virtualNetworkName = "empty";
-                        if (hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectSingleNode("VirtualNetworkName") != null)
+                        if (hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectSingleNode("VirtualNetworkName") != null)
                         {
-                            virtualNetworkName = hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectSingleNode("VirtualNetworkName").InnerText;
+                            virtualNetworkName = hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectSingleNode("VirtualNetworkName").InnerText;
                         }
-                        deploymentName = hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectSingleNode("Name").InnerText;
-                        XmlNodeList roles = hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectNodes("RoleList/Role");
+                        deploymentName = hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectSingleNode("Name").InnerText;
+                        XmlNodeList roles = hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectNodes("RoleList/Role");
                         // GetVMLBMapping is necessary because a Cloud Service can have multiple availability sets
                         // On ARM, a load balancer can only be attached to 1 availability set
                         // Because of this, if multiple availability sets exist, we are breaking the cloud service in multiple load balancers

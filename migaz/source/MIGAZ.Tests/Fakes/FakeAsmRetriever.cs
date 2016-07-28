@@ -30,19 +30,19 @@ namespace MIGAZ.Tests.Fakes
             { "VirtualMachine", new string[] { "cloudservicename", "deploymentname", "virtualmachinename" } },
             { "VMImages", new string[] { } },
         };
-        private Dictionary<string, XmlNodeList> _responses = new Dictionary<string, XmlNodeList>();
+        private Dictionary<string, XmlDocument> _responses = new Dictionary<string, XmlDocument>();
 
         public FakeAsmRetriever(ILogProvider logProvider, IStatusProvider statusProvider) : base(logProvider, statusProvider)
         {
         }
 
-        public void SetResponse(string resourceType, Hashtable info, XmlNodeList nodes)
+        public void SetResponse(string resourceType, Hashtable info, XmlDocument nodes)
         {
             string key = resourceType + ":" + SerialiseHashTable(resourceType, info);
             _responses[key] = nodes;
         }
 
-        public override XmlNodeList GetAzureASMResources(string resourceType, string subscriptionId, Hashtable info, string token)
+        public override XmlDocument GetAzureASMResources(string resourceType, string subscriptionId, Hashtable info, string token)
         {
             string key = resourceType + ":" + SerialiseHashTable(resourceType, info);
             return _responses[key];

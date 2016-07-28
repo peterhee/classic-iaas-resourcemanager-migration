@@ -272,7 +272,7 @@ namespace MIGAZ.Tests
             asmCloudServiceXml.LoadXml(sampleCloudServiceInfo);
             var info = new Hashtable();
             info["name"] = "myservice";
-            fakeAsmRetriever.SetResponse("CloudService", info, asmCloudServiceXml.SelectNodes("HostedService"));
+            fakeAsmRetriever.SetResponse("CloudService", info, asmCloudServiceXml);
 
             var asmVMXml = new XmlDocument();
             asmVMXml.LoadXml(sampleVirtualMachineInfo);
@@ -280,13 +280,13 @@ namespace MIGAZ.Tests
             info["cloudservicename"] = "myservice";
             info["deploymentname"] = "myservice";
             info["virtualmachinename"] = "myservice";
-            fakeAsmRetriever.SetResponse("VirtualMachine", info, asmVMXml.ChildNodes);
+            fakeAsmRetriever.SetResponse("VirtualMachine", info, asmVMXml);
 
             var storageKeysXml = new XmlDocument();
             storageKeysXml.LoadXml(sampleStorageKeysInfo);
             info = new Hashtable();
             info["name"] = "myservice";
-            fakeAsmRetriever.SetResponse("StorageAccountKeys", info, storageKeysXml.SelectNodes("StorageService"));
+            fakeAsmRetriever.SetResponse("StorageAccountKeys", info, storageKeysXml);
 
             var templateStream = new MemoryStream();
             var blobDetailStream = new MemoryStream();
