@@ -31,3 +31,7 @@ C:\GitHub\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\De
 C:\GitHub\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\obj\Debug\MIGAZ.Tests.csprojResolveAssemblyReference.cache
 C:\GitHub\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\obj\Debug\MIGAZ.Tests.dll
 C:\GitHub\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\obj\Debug\MIGAZ.Tests.pdb
+C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VM1\CloudService-myservice.xml
+C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VM1\VirtualMachine-myservice-myservice-myservice.xml
+C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VM1\StorageAccountKeys-myservice.xml
+C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\Storage1\StorageAccount-mystorage.xml

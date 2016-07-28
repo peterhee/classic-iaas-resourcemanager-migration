@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections;
 using System.Xml;
+using System.IO;
 
 namespace MIGAZ.Tests.Fakes
 {
@@ -27,7 +28,7 @@ namespace MIGAZ.Tests.Fakes
             { "StorageAccountKeys", new string[] { "name" } },
             { "CloudServices", new string[] { } },
             { "CloudService", new string[] { "name" } },
-            { "VirtualMachine", new string[] { "cloudservicename", "deploymentname", "virtualmachinename" } },
+            { "VirtualMachine", new string[] { "cloudservicename", "virtualmachinename", "deploymentname"} },
             { "VMImages", new string[] { } },
         };
         private Dictionary<string, XmlDocument> _responses = new Dictionary<string, XmlDocument>();
@@ -36,16 +37,56 @@ namespace MIGAZ.Tests.Fakes
         {
         }
 
-        public void SetResponse(string resourceType, Hashtable info, XmlDocument nodes)
+        public void LoadDocuments(string path)
+        {
+            foreach (var filename in Directory.GetFiles(path, "*.xml"))
+            {
+                var title = Path.GetFileNameWithoutExtension(filename);
+                var parts = title.Split('-');
+                string resourceType;
+                var info = new Hashtable();
+
+                switch (parts[0].ToLower())
+                {
+                    case "cloudservice":
+                        resourceType = "CloudService";
+                        info.Add("name", parts[1]);
+                        break;
+                    case "virtualmachine":
+                        resourceType = "VirtualMachine";
+                        info.Add("cloudservicename", parts[1]);
+                        info.Add("virtualmachinename", parts[2]);
+                        info.Add("deploymentname", parts[3]);
+                        break;
+                    case "storageaccountkeys":
+                        resourceType = "StorageAccountKeys";
+                        info.Add("name", parts[1]);
+                        break;
+                    case "storageaccount":
+                        resourceType = "StorageAccount";
+                        info.Add("name", parts[1]);
+                        break;
+                    default:
+                        throw new Exception();
+                }
+
+                var doc = new XmlDocument();
+                doc.Load(filename);
+                SetResponse(resourceType, info, doc);
+            }
+        }
+
+        public void SetResponse(string resourceType, Hashtable info, XmlDocument doc)
         {
             string key = resourceType + ":" + SerialiseHashTable(resourceType, info);
-            _responses[key] = nodes;
+            _responses[key] = doc;
         }
 
         public override XmlDocument GetAzureASMResources(string resourceType, string subscriptionId, Hashtable info, string token)
         {
             string key = resourceType + ":" + SerialiseHashTable(resourceType, info);
-            return _responses[key];
+            var xmlDoc = _responses[key];
+            return RemoveXmlns(xmlDoc.OuterXml);
         }
 
         private string SerialiseHashTable(string resourceType, Hashtable ht)

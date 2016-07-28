@@ -64,6 +64,12 @@
     <Compile Include="Fakes\FakeTokenProvider.cs" />
     <Compile Include="StorageTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Content Include="TestDocs\Storage1\StorageAccount-mystorage.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDocs\VM1\StorageAccountKeys-myservice.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Compile Include="TestHelper.cs" />
     <Compile Include="VirtualMachineTests.cs" />
   </ItemGroup>
@@ -75,6 +81,14 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="TestDocs\VM1\CloudService-myservice.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDocs\VM1\VirtualMachine-myservice-myservice-myservice.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

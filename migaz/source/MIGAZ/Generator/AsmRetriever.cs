@@ -155,7 +155,7 @@ namespace MIGAZ.Generator
 
         }
 
-        private XmlDocument RemoveXmlns(String xml)
+        protected XmlDocument RemoveXmlns(String xml)
         {
             XDocument d = XDocument.Parse(xml);
             d.Root.Descendants().Attributes().Where(x => x.IsNamespaceDeclaration).Remove();
