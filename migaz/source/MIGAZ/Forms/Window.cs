@@ -74,10 +74,10 @@ namespace MIGAZ
         {
   
             lblStatus.Text = "BUSY: Authenticating...";
-            AuthenticationContext context = new AuthenticationContext("https://login.windows.net/" + tenantId);
+            AuthenticationContext context = new AuthenticationContext(ServiceUrls.GetLoginUrl(app.Default.AzureEnvironment) + tenantId);
 
             AuthenticationResult result = null;
-            result = context.AcquireToken("https://management.core.windows.net/", app.Default.ClientId, new Uri(app.Default.ReturnURL), promptBehavior);
+            result = context.AcquireToken(ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment), app.Default.ClientId, new Uri(app.Default.ReturnURL), promptBehavior);
             if (result == null)
             {
                 throw new InvalidOperationException("Failed to obtain the token");

@@ -100,6 +100,7 @@
     <Compile Include="Generator\InteractiveTokenProvider.cs" />
     <Compile Include="Generator\ITelemetryProvider.cs" />
     <Compile Include="Generator\ITokenProvider.cs" />
+    <Compile Include="Generator\ServiceUrls.cs" />
     <Compile Include="Models\CopyBlobDetail.cs" />
     <Compile Include="Models\ARM.cs" />
     <Compile Include="Forms\Options.cs">

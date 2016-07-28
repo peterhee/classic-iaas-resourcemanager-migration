@@ -11,10 +11,10 @@ namespace MIGAZ.Generator
     {
         public string GetToken(string tenantId)
         {
-            AuthenticationContext context = new AuthenticationContext("https://login.windows.net/" + tenantId);
+            AuthenticationContext context = new AuthenticationContext(ServiceUrls.GetLoginUrl(app.Default.AzureEnvironment) + tenantId);
 
             AuthenticationResult result = null;
-            result = context.AcquireToken("https://management.core.windows.net/", app.Default.ClientId, new Uri(app.Default.ReturnURL), PromptBehavior.Auto);
+            result = context.AcquireToken(ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment), app.Default.ClientId, new Uri(app.Default.ReturnURL), PromptBehavior.Auto);
             if (result == null)
             {
                 throw new InvalidOperationException("Failed to obtain the token");

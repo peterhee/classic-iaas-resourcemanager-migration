@@ -30,82 +30,82 @@ namespace MIGAZ.Generator
             switch (resourceType)
             {
                 case "Subscriptions":
-                    url = "https://management.core.windows.net/subscriptions";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + "subscriptions";
                     _statusProvider.UpdateStatus("BUSY: Getting Subscriptions...");
                     node = "Subscriptions/Subscription";
                     break; 
                 case "VirtualNetworks":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/networking/virtualnetwork";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/virtualnetwork";
                     node = "VirtualNetworkSites/VirtualNetworkSite";
                     _statusProvider.UpdateStatus("BUSY: Getting Virtual Networks for Subscription ID : " + subscriptionId + "...");
                     break;
                 case "ClientRootCertificates":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/networking/" + info["virtualnetworkname"] + "/gateway/clientrootcertificates";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/" + info["virtualnetworkname"] + "/gateway/clientrootcertificates";
                     node = "";
                     _statusProvider.UpdateStatus("BUSY: Getting Client Root Certificates for Virtual Network : " + info["virtualnetworkname"] + "...");
                     break;
                 case "ClientRootCertificate":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/networking/" + info["virtualnetworkname"] + "/gateway/clientrootcertificates/" + info["thumbprint"];
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/" + info["virtualnetworkname"] + "/gateway/clientrootcertificates/" + info["thumbprint"];
                     node = "";
                     _statusProvider.UpdateStatus("BUSY: Getting certificate data for certificate : " + info["thumbprint"] + "...");
                     break;
                 case "NetworkSecurityGroup":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/networking/networksecuritygroups/" + info["name"] + "?detaillevel=Full";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/networksecuritygroups/" + info["name"] + "?detaillevel=Full";
                     node = "";
                     _statusProvider.UpdateStatus("BUSY: Getting Network Security Group : " + info["name"] + "...");
                     break;
                 case "RouteTable":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/networking/routetables/" + info["name"] + "?detailLevel=full";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/routetables/" + info["name"] + "?detailLevel=full";
                     node = "";
                     _statusProvider.UpdateStatus("BUSY: Getting Route Table : " + info["routetablename"] + "...");
                     break;
                 case "NSGSubnet":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/networking/virtualnetwork/" + info["virtualnetworkname"] + "/subnets/" + info["subnetname"] + "/networksecuritygroups";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/virtualnetwork/" + info["virtualnetworkname"] + "/subnets/" + info["subnetname"] + "/networksecuritygroups";
                     node = "";
                     _statusProvider.UpdateStatus("BUSY: Getting NSG for subnet " + info["subnetname"] + "...");
                     break;
                 case "VirtualNetworkGateway":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/networking/" + info["virtualnetworkname"] + "/gateway";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/" + info["virtualnetworkname"] + "/gateway";
                     node = "Gateway";
                     _statusProvider.UpdateStatus("BUSY: Getting Virtual Network Gateway : " + info["virtualnetworkname"] + "...");
                     break;
                 case "VirtualNetworkGatewaySharedKey":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/networking/" + info["virtualnetworkname"] + "/gateway/connection/" + info["localnetworksitename"] + "/sharedkey";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/" + info["virtualnetworkname"] + "/gateway/connection/" + info["localnetworksitename"] + "/sharedkey";
                     node = "SharedKey";
                     _statusProvider.UpdateStatus("BUSY: Getting Virtual Network Gateway Shared Key: " + info["localnetworksitename"] + "...");
                     break;
                 case "StorageAccounts":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/storageservices";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/storageservices";
                     node = "StorageServices/StorageService";
                     _statusProvider.UpdateStatus("BUSY: Getting Storage Accounts for Subscription ID : " + subscriptionId + "...");
                     break;
                 case "StorageAccount":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/storageservices/" + info["name"];
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/storageservices/" + info["name"];
                     node = "StorageService";
                     _statusProvider.UpdateStatus("BUSY: Getting Storage Accounts for Subscription ID : " + subscriptionId + "...");
                     break;
                 case "StorageAccountKeys":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/storageservices/" + info["name"] + "/keys";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/storageservices/" + info["name"] + "/keys";
                     node = "StorageService";
                     _statusProvider.UpdateStatus("BUSY: Getting Storage Accounts for Subscription ID : " + subscriptionId + "...");
                     break;
                 case "CloudServices":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/hostedservices";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/hostedservices";
                     node = "HostedServices/HostedService";
                     _statusProvider.UpdateStatus("BUSY: Getting Cloud Services for Subscription ID : " + subscriptionId + "...");
                     break;
                 case "CloudService":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/hostedservices/" + info["name"] + "?embed-detail=true";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/hostedservices/" + info["name"] + "?embed-detail=true";
                     node = "HostedService";
                     _statusProvider.UpdateStatus("BUSY: Getting Virtual Machines for Cloud Service : " + info["name"] + "...");
                     break;
                 case "VirtualMachine":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/hostedservices/" + info["cloudservicename"] + "/deployments/" + info["deploymentname"] + "/roles/" + info["virtualmachinename"];
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/hostedservices/" + info["cloudservicename"] + "/deployments/" + info["deploymentname"] + "/roles/" + info["virtualmachinename"];
                     node = "";
                     _statusProvider.UpdateStatus("BUSY: Getting Virtual Machines for Cloud Service : " + info["virtualmachinename"] + "...");
                     break;
                 case "VMImages":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/images";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/images";
                     node = "Images/OSImage";
                     break;
             }
