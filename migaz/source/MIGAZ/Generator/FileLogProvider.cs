@@ -16,7 +16,7 @@ namespace MIGAZ.Generator
 
         public void WriteLog(string function, string message)
         {
-            string logfilepath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\MIGAZ-" + string.Format("{0:yyyyMMdd}", DateTime.Now) + ".log";
+            string logfilepath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\MIGAZ\\MIGAZ-" + string.Format("{0:yyyyMMdd}", DateTime.Now) + ".log";
             string text = DateTime.Now.ToString() + "   " + function + "  " + message + Environment.NewLine;
             File.AppendAllText(logfilepath, text);
         }

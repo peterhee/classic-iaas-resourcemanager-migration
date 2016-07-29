@@ -166,7 +166,7 @@ namespace MIGAZ.Generator
 
         private void writeXMLtoFile(string url, string xml)
         {
-            string logfilepath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\MIGAZ-XML-" + string.Format("{0:yyyyMMdd}", DateTime.Now) + ".log";
+            string logfilepath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\MIGAZ\\MIGAZ-XML-" + string.Format("{0:yyyyMMdd}", DateTime.Now) + ".log";
             string text = DateTime.Now.ToString() + "   " + url + Environment.NewLine;
             File.AppendAllText(logfilepath, text);
             text = xml + Environment.NewLine;

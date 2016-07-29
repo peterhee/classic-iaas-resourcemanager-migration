@@ -66,6 +66,27 @@ namespace MIGAZ.Tests.Fakes
                         resourceType = "StorageAccount";
                         info.Add("name", parts[1]);
                         break;
+                    case "virtualnetworks":
+                        resourceType = "VirtualNetworks";
+                        break;
+                    case "clientrootcertificates":
+                        resourceType = "ClientRootCertificates";
+                        info.Add("virtualnetworkname", parts[1]);
+                        break;
+                    case "clientrootcertificate":
+                        resourceType = "ClientRootCertificate";
+                        info.Add("virtualnetworkname", parts[1]);
+                        info.Add("thumbprint", parts[2]);
+                        break;
+                    case "virtualnetworkgateway":
+                        resourceType = "VirtualNetworkGateway";
+                        info.Add("virtualnetworkname", parts[1]);
+                        break;
+                    case "virtualnetworkgatewaysharedkey":
+                        resourceType = "VirtualNetworkGatewaySharedKey";
+                        info.Add("virtualnetworkname", parts[1]);
+                        info.Add("localnetworksitename", parts[2]);
+                        break;
                     default:
                         throw new Exception();
                 }
@@ -91,6 +112,10 @@ namespace MIGAZ.Tests.Fakes
 
         private string SerialiseHashTable(string resourceType, Hashtable ht)
         {
+            if (ht == null)
+            {
+                return String.Empty;
+            }
             var sb = new StringBuilder();
 
             // Sort keys

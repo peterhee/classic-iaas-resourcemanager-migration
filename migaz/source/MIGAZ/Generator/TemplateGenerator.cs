@@ -217,9 +217,9 @@ namespace MIGAZ.Generator
             AvailabilitySet availabilityset = new AvailabilitySet();
 
             availabilityset.name = cloudservicename + "-defaultAS";
-            if (virtualmachine.SelectSingleNode("AvailabilitySetName") != null)
+            if (virtualmachine.SelectSingleNode("//AvailabilitySetName") != null)
             {
-                availabilityset.name = virtualmachine.SelectSingleNode("AvailabilitySetName").InnerText;
+                availabilityset.name = virtualmachine.SelectSingleNode("//AvailabilitySetName").InnerText;
             }
             availabilityset.location = virtualmachineinfo["location"].ToString();
             try // it fails if this availability set was already processed. safe to continue.
