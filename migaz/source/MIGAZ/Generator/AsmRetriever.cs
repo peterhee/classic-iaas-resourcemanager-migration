@@ -17,6 +17,8 @@ namespace MIGAZ.Generator
         private ILogProvider _logProvider;
         private IStatusProvider _statusProvider;
 
+        private Dictionary<string, XmlDocument> _documentCache = new Dictionary<string, XmlDocument>();
+
         public AsmRetriever(ILogProvider logProvider, IStatusProvider statusProvider)
         {
             _logProvider = logProvider;
@@ -27,91 +29,79 @@ namespace MIGAZ.Generator
             _logProvider.WriteLog("GetAzureASMResources", "Start");
 
             string url = null;
-            string node = null;
             switch (resourceType)
             {
                 case "Subscriptions":
                     url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + "subscriptions";
                     _statusProvider.UpdateStatus("BUSY: Getting Subscriptions...");
-                    node = "Subscriptions/Subscription";
                     break; 
                 case "VirtualNetworks":
                     url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/virtualnetwork";
-                    node = "VirtualNetworkSites/VirtualNetworkSite";
                     _statusProvider.UpdateStatus("BUSY: Getting Virtual Networks for Subscription ID : " + subscriptionId + "...");
                     break;
                 case "ClientRootCertificates":
                     url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/" + info["virtualnetworkname"] + "/gateway/clientrootcertificates";
-                    node = "";
                     _statusProvider.UpdateStatus("BUSY: Getting Client Root Certificates for Virtual Network : " + info["virtualnetworkname"] + "...");
                     break;
                 case "ClientRootCertificate":
                     url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/" + info["virtualnetworkname"] + "/gateway/clientrootcertificates/" + info["thumbprint"];
-                    node = "";
                     _statusProvider.UpdateStatus("BUSY: Getting certificate data for certificate : " + info["thumbprint"] + "...");
                     break;
                 case "NetworkSecurityGroup":
                     url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/networksecuritygroups/" + info["name"] + "?detaillevel=Full";
-                    node = "";
                     _statusProvider.UpdateStatus("BUSY: Getting Network Security Group : " + info["name"] + "...");
                     break;
                 case "RouteTable":
                     url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/routetables/" + info["name"] + "?detailLevel=full";
-                    node = "";
                     _statusProvider.UpdateStatus("BUSY: Getting Route Table : " + info["routetablename"] + "...");
                     break;
                 case "NSGSubnet":
                     url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/virtualnetwork/" + info["virtualnetworkname"] + "/subnets/" + info["subnetname"] + "/networksecuritygroups";
-                    node = "";
                     _statusProvider.UpdateStatus("BUSY: Getting NSG for subnet " + info["subnetname"] + "...");
                     break;
                 case "VirtualNetworkGateway":
                     url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/" + info["virtualnetworkname"] + "/gateway";
-                    node = "Gateway";
                     _statusProvider.UpdateStatus("BUSY: Getting Virtual Network Gateway : " + info["virtualnetworkname"] + "...");
                     break;
                 case "VirtualNetworkGatewaySharedKey":
                     url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/" + info["virtualnetworkname"] + "/gateway/connection/" + info["localnetworksitename"] + "/sharedkey";
-                    node = "SharedKey";
                     _statusProvider.UpdateStatus("BUSY: Getting Virtual Network Gateway Shared Key: " + info["localnetworksitename"] + "...");
                     break;
                 case "StorageAccounts":
                     url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/storageservices";
-                    node = "StorageServices/StorageService";
                     _statusProvider.UpdateStatus("BUSY: Getting Storage Accounts for Subscription ID : " + subscriptionId + "...");
                     break;
                 case "StorageAccount":
                     url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/storageservices/" + info["name"];
-                    node = "StorageService";
                     _statusProvider.UpdateStatus("BUSY: Getting Storage Accounts for Subscription ID : " + subscriptionId + "...");
                     break;
                 case "StorageAccountKeys":
                     url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/storageservices/" + info["name"] + "/keys";
-                    node = "StorageService";
                     _statusProvider.UpdateStatus("BUSY: Getting Storage Accounts for Subscription ID : " + subscriptionId + "...");
                     break;
                 case "CloudServices":
                     url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/hostedservices";
-                    node = "HostedServices/HostedService";
                     _statusProvider.UpdateStatus("BUSY: Getting Cloud Services for Subscription ID : " + subscriptionId + "...");
                     break;
                 case "CloudService":
                     url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/hostedservices/" + info["name"] + "?embed-detail=true";
-                    node = "HostedService";
                     _statusProvider.UpdateStatus("BUSY: Getting Virtual Machines for Cloud Service : " + info["name"] + "...");
                     break;
                 case "VirtualMachine":
                     url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/hostedservices/" + info["cloudservicename"] + "/deployments/" + info["deploymentname"] + "/roles/" + info["virtualmachinename"];
-                    node = "";
                     _statusProvider.UpdateStatus("BUSY: Getting Virtual Machines for Cloud Service : " + info["virtualmachinename"] + "...");
                     break;
                 case "VMImages":
                     url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/images";
-                    node = "Images/OSImage";
                     break;
             }
 
             Application.DoEvents();
+
+            if (_documentCache.ContainsKey(url))
+            {
+                return _documentCache[url];
+            }
 
             HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(url);
             request.Headers.Add(HttpRequestHeader.Authorization, "Bearer " + token);
@@ -140,6 +130,7 @@ namespace MIGAZ.Generator
                 _logProvider.WriteLog("GetAzureASMResources", "End");
                 writeXMLtoFile(url, xml);
 
+                _documentCache.Add(url, xmlDoc);
                 return xmlDoc;
             }
             else
@@ -157,8 +148,12 @@ namespace MIGAZ.Generator
 
         protected XmlDocument RemoveXmlns(String xml)
         {
+            if (!xml.StartsWith("<"))
+            {
+                xml = $"<data>{xml}</data>"; 
+            }
             XDocument d = XDocument.Parse(xml);
-            d.Root.Descendants().Attributes().Where(x => x.IsNamespaceDeclaration).Remove();
+            d.Root.DescendantsAndSelf().Attributes().Where(x => x.IsNamespaceDeclaration).Remove();
 
             foreach (var elem in d.Descendants())
                 elem.Name = elem.Name.LocalName;

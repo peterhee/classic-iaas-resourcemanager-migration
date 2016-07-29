@@ -246,14 +246,14 @@ namespace MIGAZ.Generator
             // if internal load balancer
             if (cloudservice.SelectNodes("//Deployments/Deployment/LoadBalancers/LoadBalancer/FrontendIpConfiguration/Type").Count > 0)
             {
-                string virtualnetworkname = cloudservice.SelectSingleNode("Deployments/Deployment/VirtualNetworkName").InnerText;
-                string subnetname = cloudservice.SelectSingleNode("Deployments/Deployment/LoadBalancers/LoadBalancer/FrontendIpConfiguration/SubnetName").InnerText.Replace(" ", "");
+                string virtualnetworkname = cloudservice.SelectSingleNode("//Deployments/Deployment/VirtualNetworkName").InnerText;
+                string subnetname = cloudservice.SelectSingleNode("//Deployments/Deployment/LoadBalancers/LoadBalancer/FrontendIpConfiguration/SubnetName").InnerText.Replace(" ", "");
 
                 frontendipconfiguration_properties.privateIPAllocationMethod = "Dynamic";
                 if (cloudservice.SelectNodes("//Deployments/Deployment/LoadBalancers/LoadBalancer/FrontendIpConfiguration/StaticVirtualNetworkIPAddress").Count > 0)
                 {
                     frontendipconfiguration_properties.privateIPAllocationMethod = "Static";
-                    frontendipconfiguration_properties.privateIPAddress = cloudservice.SelectSingleNode("Deployments/Deployment/LoadBalancers/LoadBalancer/FrontendIpConfiguration/StaticVirtualNetworkIPAddress").InnerText;
+                    frontendipconfiguration_properties.privateIPAddress = cloudservice.SelectSingleNode("//Deployments/Deployment/LoadBalancers/LoadBalancer/FrontendIpConfiguration/StaticVirtualNetworkIPAddress").InnerText;
                 }
 
                 List<string> dependson = new List<string>();
@@ -571,7 +571,7 @@ namespace MIGAZ.Generator
 
 
             // Process Virtual Network Gateway if one exists
-            if (resource.SelectNodes("//Gateway").Count > 0)
+            if (resource.SelectNodes("Gateway").Count > 0)
             {
                 // Gateway Public IP Address
                 PublicIPAddress_Properties publicipaddress_properties = new PublicIPAddress_Properties();
@@ -618,10 +618,10 @@ namespace MIGAZ.Generator
                 virtualnetworkgateway_properties.gatewayType = "Vpn";
 
                 // If there is VPN Client configuration
-                if (resource.SelectNodes("//Gateway/VPNClientAddressPool/AddressPrefixes/AddressPrefix").Count > 0)
+                if (resource.SelectNodes("Gateway/VPNClientAddressPool/AddressPrefixes/AddressPrefix").Count > 0)
                 {
                     addressprefixes = new List<string>();
-                    addressprefixes.Add(resource.SelectNodes("//Gateway/VPNClientAddressPool/AddressPrefixes/AddressPrefix")[0].InnerText);
+                    addressprefixes.Add(resource.SelectNodes("Gateway/VPNClientAddressPool/AddressPrefixes/AddressPrefix")[0].InnerText);
 
                     AddressSpace vpnclientaddresspool = new AddressSpace();
                     vpnclientaddresspool.addressPrefixes = addressprefixes;
@@ -631,15 +631,15 @@ namespace MIGAZ.Generator
 
                     //Process vpnClientRootCertificates
                     Hashtable infocrc = new Hashtable();
-                    infocrc.Add("virtualnetworkname", resource.SelectSingleNode("//Name").InnerText);
+                    infocrc.Add("virtualnetworkname", resource.SelectSingleNode("Name").InnerText);
                     XmlDocument clientrootcertificates = _asmRetriever.GetAzureASMResources("ClientRootCertificates", subscriptionId, infocrc, token);
 
                     List<VPNClientCertificate> vpnclientrootcertificates = new List<VPNClientCertificate>();
-                    foreach (XmlNode certificate in clientrootcertificates.SelectNodes("//ClientRootCertificate"))
+                    foreach (XmlNode certificate in clientrootcertificates.SelectNodes("ClientRootCertificate"))
                     {
                         Hashtable infocert = new Hashtable();
-                        infocert.Add("virtualnetworkname", resource.SelectSingleNode("//Name").InnerText);
-                        infocert.Add("thumbprint", certificate.SelectSingleNode("//Thumbprint").InnerText);
+                        infocert.Add("virtualnetworkname", resource.SelectSingleNode("Name").InnerText);
+                        infocert.Add("thumbprint", certificate.SelectSingleNode("Thumbprint").InnerText);
                         XmlDocument clientrootcertificate = _asmRetriever.GetAzureASMResources("ClientRootCertificate", subscriptionId, infocert, token);
 
                         VPNClientCertificate_Properties vpnclientcertificate_properties = new VPNClientCertificate_Properties();
@@ -658,7 +658,7 @@ namespace MIGAZ.Generator
                 }
 
                 Hashtable virtualnetworkgatewayinfo = new Hashtable();
-                virtualnetworkgatewayinfo.Add("virtualnetworkname", resource.SelectSingleNode("//Name").InnerText);
+                virtualnetworkgatewayinfo.Add("virtualnetworkname", resource.SelectSingleNode("Name").InnerText);
                 virtualnetworkgatewayinfo.Add("localnetworksitename", "");
                 XmlDocument gateway = _asmRetriever.GetAzureASMResources("VirtualNetworkGateway", subscriptionId, virtualnetworkgatewayinfo, token);
 
@@ -684,11 +684,11 @@ namespace MIGAZ.Generator
                 _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/virtualNetworkGateways/" + virtualnetworkgateway.name);
 
                 // Local Network Gateways & Connections
-                foreach (XmlNode LocalNetworkSite in resource.SelectNodes("//Gateway/Sites/LocalNetworkSite"))
+                foreach (XmlNode LocalNetworkSite in resource.SelectNodes("Gateway/Sites/LocalNetworkSite"))
                 {
                     // Local Network Gateway
                     addressprefixes = new List<string>();
-                    foreach (XmlNode addressprefix in LocalNetworkSite.SelectNodes("//AddressSpace/AddressPrefixes"))
+                    foreach (XmlNode addressprefix in LocalNetworkSite.SelectNodes("AddressSpace/AddressPrefixes"))
                     {
                         addressprefixes.Add(addressprefix.SelectSingleNode("AddressPrefix").InnerText);
                     }
@@ -814,14 +814,14 @@ namespace MIGAZ.Generator
             XmlDocument resource = _asmRetriever.GetAzureASMResources("RouteTable", subscriptionId, info, token);
 
             RouteTable routetable = new RouteTable();
-            routetable.name = resource.SelectSingleNode("//Name").InnerText;
-            routetable.location = resource.SelectSingleNode("//Location").InnerText;
+            routetable.name = resource.SelectSingleNode("Name").InnerText;
+            routetable.location = resource.SelectSingleNode("Location").InnerText;
 
             RouteTable_Properties routetable_properties = new RouteTable_Properties();
             routetable_properties.routes = new List<Route>();
 
             // for each route
-            foreach (XmlNode routenode in resource.SelectNodes("//RouteList/Route"))
+            foreach (XmlNode routenode in resource.SelectNodes("RouteList/Route"))
             {
                 //securityrule_properties.protocol = rule.SelectSingleNode("Protocol").InnerText;
                 Route_Properties route_properties = new Route_Properties();
