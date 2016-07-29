@@ -635,7 +635,7 @@ namespace MIGAZ.Generator
                     XmlDocument clientrootcertificates = _asmRetriever.GetAzureASMResources("ClientRootCertificates", subscriptionId, infocrc, token);
 
                     List<VPNClientCertificate> vpnclientrootcertificates = new List<VPNClientCertificate>();
-                    foreach (XmlNode certificate in clientrootcertificates.SelectNodes("ClientRootCertificate"))
+                    foreach (XmlNode certificate in clientrootcertificates.SelectNodes("//ClientRootCertificate"))
                     {
                         Hashtable infocert = new Hashtable();
                         infocert.Add("virtualnetworkname", resource.SelectSingleNode("Name").InnerText);
