@@ -73,6 +73,15 @@
     </Content>
     <Compile Include="TestHelper.cs" />
     <Compile Include="VirtualMachineTests.cs" />
+    <Content Include="TestDocs\VM2\CloudService-myservice.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDocs\VM2\StorageAccountKeys-myservice.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDocs\VM2\VirtualMachine-myservice-myservice-myservice.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="TestDocs\VNET1\ClientRootCertificate-10.2.0.0-YYYY.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

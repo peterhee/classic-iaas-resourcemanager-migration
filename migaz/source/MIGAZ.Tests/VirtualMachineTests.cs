@@ -59,5 +59,40 @@ namespace MIGAZ.Tests
             var asResource = templateJson["resources"].Where(j => j["type"].Value<string>() == "Microsoft.Compute/availabilitySets").Single();
             Assert.AreEqual(expectedASName, asResource["name"].Value<string>());
         }
+
+        [TestMethod]
+        public void ValidateSingleVMWithDataDisksNotInVnet()
+        {
+            FakeAsmRetriever fakeAsmRetriever;
+            TemplateGenerator templateGenerator;
+            TestHelper.SetupObjects(out fakeAsmRetriever, out templateGenerator);
+            fakeAsmRetriever.LoadDocuments(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestDocs\\VM2"));
+
+            var templateStream = new MemoryStream();
+            var blobDetailStream = new MemoryStream();
+            var artefacts = new AsmArtefacts();
+            artefacts.VirtualMachines.Add(new CloudServiceVM() { CloudService = "myservice", VirtualMachine = "myservice" });
+
+            templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
+
+            var templateJson = TestHelper.GetJsonData(templateStream);
+
+            // Validate VNET
+            var vnets = templateJson["resources"].Children().Where(
+                r => r["type"].Value<string>() == "Microsoft.Network/virtualNetworks");
+            Assert.AreEqual(1, vnets.Count());
+            Assert.AreEqual("myservice-VNET", vnets.First()["name"].Value<string>());
+
+            // Validate VM
+            var vmResource = templateJson["resources"].Where(
+                j => j["type"].Value<string>() == "Microsoft.Compute/virtualMachines").Single();
+            Assert.AreEqual("myservice", vmResource["name"].Value<string>());
+
+            // Validate disks
+            var dataDisks = (JArray)vmResource["properties"]["storageProfile"]["dataDisks"];
+            Assert.AreEqual(2, dataDisks.Count);
+            Assert.AreEqual("Disk1", dataDisks[0]["name"].Value<string>());
+            Assert.AreEqual("Disk2", dataDisks[1]["name"].Value<string>());
+        }
     }
 }
