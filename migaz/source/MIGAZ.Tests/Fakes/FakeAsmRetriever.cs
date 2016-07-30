@@ -87,6 +87,14 @@ namespace MIGAZ.Tests.Fakes
                         info.Add("virtualnetworkname", parts[1]);
                         info.Add("localnetworksitename", parts[2]);
                         break;
+                    case "networksecuritygroup":
+                        resourceType = "NetworkSecurityGroup";
+                        info.Add("name", parts[1]);
+                        break;
+                    case "routetable":
+                        resourceType = "RouteTable";
+                        info.Add("name", parts[1]);
+                        break;
                     default:
                         throw new Exception();
                 }

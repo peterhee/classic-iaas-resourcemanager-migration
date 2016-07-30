@@ -97,6 +97,15 @@
     <Content Include="TestDocs\VNET1\VirtualNetworks.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="TestDocs\VNET2\NetworkSecurityGroup-asmnsg.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDocs\VNET2\RouteTable-asmrt.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDocs\VNET2\VirtualNetworks.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MIGAZ\MIGAZ.csproj">

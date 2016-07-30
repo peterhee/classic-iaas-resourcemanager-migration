@@ -43,3 +43,6 @@ C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET1\C
 C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET1\VirtualNetworkGateway-10.2.0.0.xml
 C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET1\VirtualNetworkGatewaySharedKey-10.2.0.0-MOBILE DATACENTER.xml
 C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET1\VirtualNetworkGatewaySharedKey-10.2.0.0-EastUSNet.xml
+C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET2\VirtualNetworks.xml
+C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET2\NetworkSecurityGroup-asmnsg.xml
+C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET2\RouteTable-asmrt.xml

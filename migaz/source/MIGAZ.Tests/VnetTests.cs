@@ -63,5 +63,58 @@ namespace MIGAZ.Tests
             Assert.AreEqual("Dynamic", pips.First()["properties"]["publicIPAllocationMethod"].Value<string>());
         }
 
+        [TestMethod]
+        public void ValidateSingleVnetWithNsgAndRT()
+        {
+            FakeAsmRetriever fakeAsmRetriever;
+            TemplateGenerator templateGenerator;
+            TestHelper.SetupObjects(out fakeAsmRetriever, out templateGenerator);
+            fakeAsmRetriever.LoadDocuments(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestDocs\\VNET2"));
+
+            var templateStream = new MemoryStream();
+            var blobDetailStream = new MemoryStream();
+            var artefacts = new AsmArtefacts();
+            artefacts.VirtualNetworks.Add("asmtest");
+
+            templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
+
+            JObject templateJson = TestHelper.GetJsonData(templateStream);
+
+            // Validate NSG
+            var nsgs = templateJson["resources"].Children().Where(
+                r => r["type"].Value<string>() == "Microsoft.Network/networkSecurityGroups");
+            Assert.AreEqual(1, nsgs.Count());
+            Assert.AreEqual("asmnsg", nsgs.First()["name"].Value<string>());
+
+            // Validate NSG rules
+            JArray rules = (JArray) nsgs.First()["properties"]["securityRules"];
+            Assert.AreEqual(2, rules.Count());
+            Assert.AreEqual("Enable-Internal-DNS", rules[0]["name"].Value<string>());
+            Assert.AreEqual("Port-7777-rule", rules[1]["name"].Value<string>());
+
+            // Validate RouteTable
+            var rt = templateJson["resources"].Children().Where(
+                r => r["type"].Value<string>() == "Microsoft.Network/routeTables");
+            Assert.AreEqual(1, rt.Count());
+            Assert.AreEqual("asmrt", rt.First()["name"].Value<string>());
+
+            // Validate Routes
+            JArray routes = (JArray)rt.First()["properties"]["routes"];
+            Assert.AreEqual(1, routes.Count());
+            Assert.AreEqual("all-traffic-to-fw", routes[0]["name"].Value<string>());
+
+            // Validate VNETs
+            var vnets = templateJson["resources"].Children().Where(
+                r => r["type"].Value<string>() == "Microsoft.Network/virtualNetworks");
+            Assert.AreEqual(1, vnets.Count());
+            Assert.AreEqual("asmtest", vnets.First()["name"].Value<string>());
+
+            // Validate subnets
+            var subnets = vnets.First()["properties"]["subnets"];
+            Assert.AreEqual(1, subnets.Count());
+            Assert.AreEqual("Subnet-1", subnets.First()["name"].Value<string>());
+            StringAssert.Contains(subnets.First()["properties"]["networkSecurityGroup"]["id"].Value<string>(), "networkSecurityGroups/asmnsg");
+            StringAssert.Contains(subnets.First()["properties"]["routeTable"]["id"].Value<string>(), "routeTables/asmrt");
+        }
     }
 }
