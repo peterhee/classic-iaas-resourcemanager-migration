@@ -757,7 +757,7 @@ namespace MIGAZ.Generator
             XmlDocument resource = _asmRetriever.GetAzureASMResources("NetworkSecurityGroup", subscriptionId, nsginfo, token);
 
             NetworkSecurityGroup networksecuritygroup = new NetworkSecurityGroup();
-            networksecuritygroup.name = resource.SelectSingleNode("//Name").InnerText;
+            networksecuritygroup.name = resource.SelectSingleNode("//Name").InnerText.Replace(' ', '-');
             networksecuritygroup.location = resource.SelectSingleNode("//Location").InnerText;
 
             NetworkSecurityGroup_Properties networksecuritygroup_properties = new NetworkSecurityGroup_Properties();
@@ -783,7 +783,7 @@ namespace MIGAZ.Generator
                     securityrule_properties.protocol = rule.SelectSingleNode("Protocol").InnerText;
 
                     SecurityRule securityrule = new SecurityRule();
-                    securityrule.name = rule.SelectSingleNode("Name").InnerText;
+                    securityrule.name = rule.SelectSingleNode("Name").InnerText.Replace(' ', '-');
                     securityrule.properties = securityrule_properties;
 
                     networksecuritygroup_properties.securityRules.Add(securityrule);
@@ -814,14 +814,14 @@ namespace MIGAZ.Generator
             XmlDocument resource = _asmRetriever.GetAzureASMResources("RouteTable", subscriptionId, info, token);
 
             RouteTable routetable = new RouteTable();
-            routetable.name = resource.SelectSingleNode("Name").InnerText;
-            routetable.location = resource.SelectSingleNode("Location").InnerText;
+            routetable.name = resource.SelectSingleNode("//Name").InnerText;
+            routetable.location = resource.SelectSingleNode("//Location").InnerText;
 
             RouteTable_Properties routetable_properties = new RouteTable_Properties();
             routetable_properties.routes = new List<Route>();
 
             // for each route
-            foreach (XmlNode routenode in resource.SelectNodes("RouteList/Route"))
+            foreach (XmlNode routenode in resource.SelectNodes("//RouteList/Route"))
             {
                 //securityrule_properties.protocol = rule.SelectSingleNode("Protocol").InnerText;
                 Route_Properties route_properties = new Route_Properties();
@@ -850,7 +850,7 @@ namespace MIGAZ.Generator
                     route_properties.nextHopIpAddress = routenode.SelectSingleNode("NextHopType/IpAddress").InnerText;
 
                 Route route = new Route();
-                route.name = routenode.SelectSingleNode("Name").InnerText;
+                route.name = routenode.SelectSingleNode("Name").InnerText.Replace(' ', '-');
                 route.properties = route_properties;
 
                 routetable_properties.routes.Add(route);
