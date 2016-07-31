@@ -71,7 +71,7 @@ namespace MIGAZ.Tests
             var templateStream = new MemoryStream();
             var blobDetailStream = new MemoryStream();
             var artefacts = new AsmArtefacts();
-            artefacts.VirtualMachines.Add(new CloudServiceVM() { CloudService = "myservice", VirtualMachine = "myservice" });
+            artefacts.VirtualMachines.Add(new CloudServiceVM() { CloudService = "myasmvm", VirtualMachine = "myasmvm" });
 
             templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
 
@@ -81,12 +81,12 @@ namespace MIGAZ.Tests
             var vnets = templateJson["resources"].Children().Where(
                 r => r["type"].Value<string>() == "Microsoft.Network/virtualNetworks");
             Assert.AreEqual(1, vnets.Count());
-            Assert.AreEqual("myservice-VNET", vnets.First()["name"].Value<string>());
+            Assert.AreEqual("myasmvm-VNET", vnets.First()["name"].Value<string>());
 
             // Validate VM
             var vmResource = templateJson["resources"].Where(
                 j => j["type"].Value<string>() == "Microsoft.Compute/virtualMachines").Single();
-            Assert.AreEqual("myservice", vmResource["name"].Value<string>());
+            Assert.AreEqual("myasmvm", vmResource["name"].Value<string>());
 
             // Validate disks
             var dataDisks = (JArray)vmResource["properties"]["storageProfile"]["dataDisks"];

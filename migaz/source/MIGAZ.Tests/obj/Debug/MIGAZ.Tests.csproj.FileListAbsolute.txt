@@ -46,6 +46,6 @@ C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET1\V
 C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET2\VirtualNetworks.xml
 C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET2\NetworkSecurityGroup-asmnsg.xml
 C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET2\RouteTable-asmrt.xml
-C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VM2\CloudService-myservice.xml
-C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VM2\StorageAccountKeys-myservice.xml
-C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VM2\VirtualMachine-myservice-myservice-myservice.xml
+C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VM2\CloudService-myasmvm.xml
+C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VM2\VirtualMachine-myasmvm-myasmvm-myasmvm.xml
+C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VM2\StorageAccountKeys-mystorage.xml
