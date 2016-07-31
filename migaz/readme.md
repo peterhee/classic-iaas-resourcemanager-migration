@@ -57,9 +57,9 @@ The tool uses Service Management REST API calls to gather all the details on Net
 
 - **Copyblobdetails.JSON** - This file contains the Source and Target Storage Accounts with their keys to access them for the blob copy
 
-- **MIGAZ-&lt;YYYYMMDD&gt;.log** - This file is created in the %USERPROFILE%\appdata\Local\MIGAZ and record each steps processed in the tool
+- **MIGAZ-&lt;YYYYMMDD&gt;.log** - This file is created in the %USERPROFILE%\appdata\Local and record each steps processed in the tool
 
-- **MIGAZ-XML-&lt;YYYYMMDD&gt;.log** - This file is created in the %USERPROFILE%\appdata\Local\MIGAZ and it is an export of the raw xml captured and processed from the REST API calls
+- **MIGAZ-XML-&lt;YYYYMMDD&gt;.log** - This file is created in the %USERPROFILE%\appdata\Local and it is an export of the raw xml captured and processed from the REST API calls
 
 <br>
 > Migrating resources with these tool will cause downtime for your classic Virtual Machines. If you're looking for platform supported migration, please visit 
@@ -154,12 +154,6 @@ If this option is selected, the selected virtual machines will be exported to ex
 ### Allow telemetry collection
 
 “Allow telemetry collection” is enabled by default. It is used to collect information such as Tenant ID, Subscription ID, Processed Resource Type, Processed Resource Location and the Execution date. This data is collected only to know the tool usage and it will remain only with the development team. You can disable this at any time.
-
-### Azure Environment
-
-To enable deployment of the ARM template to the new Microsoft National Clouds you can choose from the options windows which cloud you want to use.
-
-![migAz options window](./media/virtual-machines-windows-migration-migaz/options-clouds.png)
 
 ## Scenarios
 
