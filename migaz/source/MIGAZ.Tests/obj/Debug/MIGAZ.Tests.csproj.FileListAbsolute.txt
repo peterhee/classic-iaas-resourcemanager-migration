@@ -43,9 +43,26 @@ C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET1\C
 C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET1\VirtualNetworkGateway-10.2.0.0.xml
 C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET1\VirtualNetworkGatewaySharedKey-10.2.0.0-MOBILE DATACENTER.xml
 C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET1\VirtualNetworkGatewaySharedKey-10.2.0.0-EastUSNet.xml
-C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET2\VirtualNetworks.xml
-C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET2\NetworkSecurityGroup-asmnsg.xml
-C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET2\RouteTable-asmrt.xml
-C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VM2\CloudService-myasmvm.xml
-C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VM2\VirtualMachine-myasmvm-myasmvm-myasmvm.xml
-C:\Projects\Git\ArmMigration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VM2\StorageAccountKeys-mystorage.xml
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\Storage1\StorageAccount-mystorage.xml
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VM1\StorageAccountKeys-myservice.xml
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET1\ClientRootCertificate-10.2.0.0-YYYY.xml
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET1\ClientRootCertificate-10.2.0.0-ZZZZ.xml
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET1\ClientRootCertificate-10.2.0.0-XXXX.xml
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET1\ClientRootCertificates-10.2.0.0.xml
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET1\VirtualNetworkGateway-10.2.0.0.xml
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET1\VirtualNetworkGatewaySharedKey-10.2.0.0-EastUSNet.xml
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET1\VirtualNetworkGatewaySharedKey-10.2.0.0-MOBILE DATACENTER.xml
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VNET1\VirtualNetworks.xml
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VM1\CloudService-myservice.xml
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\TestDocs\VM1\VirtualMachine-myservice-myservice-myservice.xml
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\MIGAZ.Tests.dll
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\MIGAZ.Tests.pdb
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\migAz.exe
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\Newtonsoft.Json.dll
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\Microsoft.IdentityModel.Clients.ActiveDirectory.dll
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\migAz.pdb
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\Newtonsoft.Json.xml
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\bin\Debug\Microsoft.IdentityModel.Clients.ActiveDirectory.xml
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\obj\Debug\MIGAZ.Tests.csprojResolveAssemblyReference.cache
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\obj\Debug\MIGAZ.Tests.dll
+C:\GitHub\Tom\classic-iaas-resourcemanager-migration\migaz\source\MIGAZ.Tests\obj\Debug\MIGAZ.Tests.pdb
