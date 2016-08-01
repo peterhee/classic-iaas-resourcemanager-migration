@@ -53,6 +53,7 @@ namespace MIGAZ.Forms
             app.Default.UniquenessSuffix = txtSuffix.Text;
             app.Default.BuildEmpty = chkBuildEmpty.Checked;
             app.Default.AllowTelemetry = chkAllowTelemetry.Checked;
+            app.Default.AzureEnvironment = cboAzureEnvironment.Text;
             app.Default.Save();
         }
 
@@ -61,6 +62,7 @@ namespace MIGAZ.Forms
             txtSuffix.Text = app.Default.UniquenessSuffix;
             chkBuildEmpty.Checked = app.Default.BuildEmpty;
             chkAllowTelemetry.Checked = app.Default.AllowTelemetry;
+            cboAzureEnvironment.Text = app.Default.AzureEnvironment;
         }
     }
 }

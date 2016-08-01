@@ -26,5 +26,8 @@
     <Setting Name="ExecutionId" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
+    <Setting Name="AzureEnvironment" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Azure Cloud</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

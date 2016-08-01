@@ -109,5 +109,17 @@ namespace MIGAZ {
                 this["ExecutionId"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Azure Cloud")]
+        public string AzureEnvironment {
+            get {
+                return ((string)(this["AzureEnvironment"]));
+            }
+            set {
+                this["AzureEnvironment"] = value;
+            }
+        }
     }
 }

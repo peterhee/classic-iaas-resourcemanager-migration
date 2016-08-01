@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
+using System.Xml.Linq;
 
 namespace MIGAZ.Generator
 {
@@ -16,101 +17,91 @@ namespace MIGAZ.Generator
         private ILogProvider _logProvider;
         private IStatusProvider _statusProvider;
 
+        private Dictionary<string, XmlDocument> _documentCache = new Dictionary<string, XmlDocument>();
+
         public AsmRetriever(ILogProvider logProvider, IStatusProvider statusProvider)
         {
             _logProvider = logProvider;
             _statusProvider = statusProvider;
         }
-        public virtual XmlNodeList GetAzureASMResources(string resourceType, string subscriptionId, Hashtable info, string token)
+        public virtual XmlDocument GetAzureASMResources(string resourceType, string subscriptionId, Hashtable info, string token)
         {
             _logProvider.WriteLog("GetAzureASMResources", "Start");
 
             string url = null;
-            string node = null;
             switch (resourceType)
             {
                 case "Subscriptions":
-                    url = "https://management.core.windows.net/subscriptions";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + "subscriptions";
                     _statusProvider.UpdateStatus("BUSY: Getting Subscriptions...");
-                    node = "Subscriptions/Subscription";
                     break; 
                 case "VirtualNetworks":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/networking/virtualnetwork";
-                    node = "VirtualNetworkSites/VirtualNetworkSite";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/virtualnetwork";
                     _statusProvider.UpdateStatus("BUSY: Getting Virtual Networks for Subscription ID : " + subscriptionId + "...");
                     break;
                 case "ClientRootCertificates":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/networking/" + info["virtualnetworkname"] + "/gateway/clientrootcertificates";
-                    node = "";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/" + info["virtualnetworkname"] + "/gateway/clientrootcertificates";
                     _statusProvider.UpdateStatus("BUSY: Getting Client Root Certificates for Virtual Network : " + info["virtualnetworkname"] + "...");
                     break;
                 case "ClientRootCertificate":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/networking/" + info["virtualnetworkname"] + "/gateway/clientrootcertificates/" + info["thumbprint"];
-                    node = "";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/" + info["virtualnetworkname"] + "/gateway/clientrootcertificates/" + info["thumbprint"];
                     _statusProvider.UpdateStatus("BUSY: Getting certificate data for certificate : " + info["thumbprint"] + "...");
                     break;
                 case "NetworkSecurityGroup":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/networking/networksecuritygroups/" + info["name"] + "?detaillevel=Full";
-                    node = "";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/networksecuritygroups/" + info["name"] + "?detaillevel=Full";
                     _statusProvider.UpdateStatus("BUSY: Getting Network Security Group : " + info["name"] + "...");
                     break;
                 case "RouteTable":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/networking/routetables/" + info["name"] + "?detailLevel=full";
-                    node = "";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/routetables/" + info["name"] + "?detailLevel=full";
                     _statusProvider.UpdateStatus("BUSY: Getting Route Table : " + info["routetablename"] + "...");
                     break;
                 case "NSGSubnet":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/networking/virtualnetwork/" + info["virtualnetworkname"] + "/subnets/" + info["subnetname"] + "/networksecuritygroups";
-                    node = "";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/virtualnetwork/" + info["virtualnetworkname"] + "/subnets/" + info["subnetname"] + "/networksecuritygroups";
                     _statusProvider.UpdateStatus("BUSY: Getting NSG for subnet " + info["subnetname"] + "...");
                     break;
                 case "VirtualNetworkGateway":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/networking/" + info["virtualnetworkname"] + "/gateway";
-                    node = "Gateway";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/" + info["virtualnetworkname"] + "/gateway";
                     _statusProvider.UpdateStatus("BUSY: Getting Virtual Network Gateway : " + info["virtualnetworkname"] + "...");
                     break;
                 case "VirtualNetworkGatewaySharedKey":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/networking/" + info["virtualnetworkname"] + "/gateway/connection/" + info["localnetworksitename"] + "/sharedkey";
-                    node = "SharedKey";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/" + info["virtualnetworkname"] + "/gateway/connection/" + info["localnetworksitename"] + "/sharedkey";
                     _statusProvider.UpdateStatus("BUSY: Getting Virtual Network Gateway Shared Key: " + info["localnetworksitename"] + "...");
                     break;
                 case "StorageAccounts":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/storageservices";
-                    node = "StorageServices/StorageService";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/storageservices";
                     _statusProvider.UpdateStatus("BUSY: Getting Storage Accounts for Subscription ID : " + subscriptionId + "...");
                     break;
                 case "StorageAccount":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/storageservices/" + info["name"];
-                    node = "StorageService";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/storageservices/" + info["name"];
                     _statusProvider.UpdateStatus("BUSY: Getting Storage Accounts for Subscription ID : " + subscriptionId + "...");
                     break;
                 case "StorageAccountKeys":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/storageservices/" + info["name"] + "/keys";
-                    node = "StorageService";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/storageservices/" + info["name"] + "/keys";
                     _statusProvider.UpdateStatus("BUSY: Getting Storage Accounts for Subscription ID : " + subscriptionId + "...");
                     break;
                 case "CloudServices":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/hostedservices";
-                    node = "HostedServices/HostedService";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/hostedservices";
                     _statusProvider.UpdateStatus("BUSY: Getting Cloud Services for Subscription ID : " + subscriptionId + "...");
                     break;
                 case "CloudService":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/hostedservices/" + info["name"] + "?embed-detail=true";
-                    node = "HostedService";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/hostedservices/" + info["name"] + "?embed-detail=true";
                     _statusProvider.UpdateStatus("BUSY: Getting Virtual Machines for Cloud Service : " + info["name"] + "...");
                     break;
                 case "VirtualMachine":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/hostedservices/" + info["cloudservicename"] + "/deployments/" + info["deploymentname"] + "/roles/" + info["virtualmachinename"];
-                    node = "";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/hostedservices/" + info["cloudservicename"] + "/deployments/" + info["deploymentname"] + "/roles/" + info["virtualmachinename"];
                     _statusProvider.UpdateStatus("BUSY: Getting Virtual Machines for Cloud Service : " + info["virtualmachinename"] + "...");
                     break;
                 case "VMImages":
-                    url = "https://management.core.windows.net/" + subscriptionId + "/services/images";
-                    node = "Images/OSImage";
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/images";
                     break;
             }
 
             Application.DoEvents();
+
+            if (_documentCache.ContainsKey(url))
+            {
+                return _documentCache[url];
+            }
 
             HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(url);
             request.Headers.Add(HttpRequestHeader.Authorization, "Bearer " + token);
@@ -134,26 +125,13 @@ namespace MIGAZ.Generator
 
             if (xml != "")
             {
-                xml = xml.Replace(@"xmlns=""http://schemas.microsoft.com/windowsazure""", "");
-                xml = xml.Replace(@"xmlns:i=""http://www.w3.org/2001/XMLSchema-instance""", "");
-                xml = xml.Replace(@"i:nil=""true""", "");
-                xml = xml.Replace(@"i:type=", "type=");
-                XmlDocument xmlDoc = new XmlDocument();
-
-                if (xml[0].ToString() != "<")
-                {
-                    xml = "<data>" + xml + "</data>";
-                }
-
-                xmlDoc.LoadXml(xml);
+                XmlDocument xmlDoc = RemoveXmlns(xml);
 
                 _logProvider.WriteLog("GetAzureASMResources", "End");
                 writeXMLtoFile(url, xml);
 
-                if (node == "")
-                { return xmlDoc.ChildNodes; }
-                else
-                { return xmlDoc.SelectNodes(node); }
+                _documentCache.Add(url, xmlDoc);
+                return xmlDoc;
             }
             else
             {
@@ -163,14 +141,32 @@ namespace MIGAZ.Generator
 
                 _logProvider.WriteLog("GetAzureASMResources", "End");
                 writeXMLtoFile(url, "");
-                return xmlDoc.SelectNodes("Empty");
+                return null;
             }
 
         }
 
+        protected XmlDocument RemoveXmlns(String xml)
+        {
+            if (!xml.StartsWith("<"))
+            {
+                xml = $"<data>{xml}</data>"; 
+            }
+            XDocument d = XDocument.Parse(xml);
+            d.Root.DescendantsAndSelf().Attributes().Where(x => x.IsNamespaceDeclaration).Remove();
+
+            foreach (var elem in d.Descendants())
+                elem.Name = elem.Name.LocalName;
+
+            var xmlDocument = new XmlDocument();
+            xmlDocument.Load(d.CreateReader());
+
+            return xmlDocument;
+        }
+
         private void writeXMLtoFile(string url, string xml)
         {
-            string logfilepath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\MIGAZ-XML-" + string.Format("{0:yyyyMMdd}", DateTime.Now) + ".log";
+            string logfilepath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\MIGAZ\\MIGAZ-XML-" + string.Format("{0:yyyyMMdd}", DateTime.Now) + ".log";
             string text = DateTime.Now.ToString() + "   " + url + Environment.NewLine;
             File.AppendAllText(logfilepath, text);
             text = xml + Environment.NewLine;
@@ -184,20 +180,20 @@ namespace MIGAZ.Generator
             Hashtable cloudserviceinfo = new Hashtable();
             cloudserviceinfo.Add("name", cloudServiceName);
 
-            XmlNodeList hostedservice = GetAzureASMResources("CloudService", subscriptionId, cloudserviceinfo, token);
-            if (hostedservice[0].SelectNodes("Deployments/Deployment").Count > 0)
+            XmlDocument hostedservice = GetAzureASMResources("CloudService", subscriptionId, cloudserviceinfo, token);
+            if (hostedservice.SelectNodes("//Deployments/Deployment").Count > 0)
             {
-                if (hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectNodes("RoleType").Count > 0)
+                if (hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectNodes("RoleType").Count > 0)
                 {
-                    if (hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectSingleNode("RoleType").InnerText == "PersistentVMRole")
+                    if (hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectSingleNode("RoleType").InnerText == "PersistentVMRole")
                     {
                         virtualNetworkName = "empty";
-                        if (hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectSingleNode("VirtualNetworkName") != null)
+                        if (hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectSingleNode("VirtualNetworkName") != null)
                         {
-                            virtualNetworkName = hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectSingleNode("VirtualNetworkName").InnerText;
+                            virtualNetworkName = hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectSingleNode("VirtualNetworkName").InnerText;
                         }
-                        deploymentName = hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectSingleNode("Name").InnerText;
-                        XmlNodeList roles = hostedservice[0].SelectNodes("Deployments/Deployment")[0].SelectNodes("RoleList/Role");
+                        deploymentName = hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectSingleNode("Name").InnerText;
+                        XmlNodeList roles = hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectNodes("RoleList/Role");
                         // GetVMLBMapping is necessary because a Cloud Service can have multiple availability sets
                         // On ARM, a load balancer can only be attached to 1 availability set
                         // Because of this, if multiple availability sets exist, we are breaking the cloud service in multiple load balancers
