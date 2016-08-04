@@ -54,11 +54,11 @@
             // 
             // btnGetToken
             // 
-            this.btnGetToken.Location = new System.Drawing.Point(32, 16);
-            this.btnGetToken.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnGetToken.Location = new System.Drawing.Point(36, 20);
+            this.btnGetToken.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.btnGetToken.Name = "btnGetToken";
-            this.btnGetToken.Size = new System.Drawing.Size(172, 28);
-            this.btnGetToken.TabIndex = 2;
+            this.btnGetToken.Size = new System.Drawing.Size(194, 35);
+            this.btnGetToken.TabIndex = 0;
             this.btnGetToken.Text = "Sign In";
             this.btnGetToken.UseVisualStyleBackColor = true;
             this.btnGetToken.Click += new System.EventHandler(this.btnGetToken_Click);
@@ -66,11 +66,11 @@
             // btnExport
             // 
             this.btnExport.Enabled = false;
-            this.btnExport.Location = new System.Drawing.Point(824, 633);
-            this.btnExport.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnExport.Location = new System.Drawing.Point(927, 791);
+            this.btnExport.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.btnExport.Name = "btnExport";
-            this.btnExport.Size = new System.Drawing.Size(437, 28);
-            this.btnExport.TabIndex = 25;
+            this.btnExport.Size = new System.Drawing.Size(492, 35);
+            this.btnExport.TabIndex = 7;
             this.btnExport.Text = "Export 0 objects";
             this.btnExport.UseVisualStyleBackColor = true;
             this.btnExport.Click += new System.EventHandler(this.btnExport_Click);
@@ -78,11 +78,11 @@
             // btnChoosePath
             // 
             this.btnChoosePath.Enabled = false;
-            this.btnChoosePath.Location = new System.Drawing.Point(590, 633);
-            this.btnChoosePath.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnChoosePath.Location = new System.Drawing.Point(664, 791);
+            this.btnChoosePath.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.btnChoosePath.Name = "btnChoosePath";
-            this.btnChoosePath.Size = new System.Drawing.Size(39, 28);
-            this.btnChoosePath.TabIndex = 28;
+            this.btnChoosePath.Size = new System.Drawing.Size(44, 35);
+            this.btnChoosePath.TabIndex = 6;
             this.btnChoosePath.Text = "...";
             this.btnChoosePath.UseVisualStyleBackColor = true;
             this.btnChoosePath.Click += new System.EventHandler(this.btnChoosePath_Click);
@@ -90,20 +90,20 @@
             // txtDestinationFolder
             // 
             this.txtDestinationFolder.Enabled = false;
-            this.txtDestinationFolder.Location = new System.Drawing.Point(135, 635);
-            this.txtDestinationFolder.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.txtDestinationFolder.Location = new System.Drawing.Point(152, 794);
+            this.txtDestinationFolder.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.txtDestinationFolder.Name = "txtDestinationFolder";
-            this.txtDestinationFolder.Size = new System.Drawing.Size(447, 22);
-            this.txtDestinationFolder.TabIndex = 27;
+            this.txtDestinationFolder.Size = new System.Drawing.Size(502, 26);
+            this.txtDestinationFolder.TabIndex = 5;
             this.txtDestinationFolder.TextChanged += new System.EventHandler(this.txtDestinationFolder_TextChanged);
             // 
             // lblOutputFolder
             // 
             this.lblOutputFolder.AutoSize = true;
-            this.lblOutputFolder.Location = new System.Drawing.Point(28, 638);
+            this.lblOutputFolder.Location = new System.Drawing.Point(32, 798);
             this.lblOutputFolder.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblOutputFolder.Name = "lblOutputFolder";
-            this.lblOutputFolder.Size = new System.Drawing.Size(99, 17);
+            this.lblOutputFolder.Size = new System.Drawing.Size(111, 20);
             this.lblOutputFolder.TabIndex = 26;
             this.lblOutputFolder.Text = "Output Folder:";
             // 
@@ -116,17 +116,17 @@
             this.statusStrip1.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.lblStatus});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 677);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 848);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Padding = new System.Windows.Forms.Padding(2, 0, 19, 0);
-            this.statusStrip1.Size = new System.Drawing.Size(1275, 25);
+            this.statusStrip1.Padding = new System.Windows.Forms.Padding(2, 0, 21, 0);
+            this.statusStrip1.Size = new System.Drawing.Size(1434, 30);
             this.statusStrip1.TabIndex = 29;
             this.statusStrip1.Text = "statusStrip1";
             // 
             // lblStatus
             // 
             this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(50, 20);
+            this.lblStatus.Size = new System.Drawing.Size(60, 25);
             this.lblStatus.Text = "Ready";
             // 
             // cmbSubscriptions
@@ -135,30 +135,30 @@
             this.cmbSubscriptions.Enabled = false;
             this.cmbSubscriptions.FormattingEnabled = true;
             this.cmbSubscriptions.ImeMode = System.Windows.Forms.ImeMode.Off;
-            this.cmbSubscriptions.Location = new System.Drawing.Point(640, 19);
-            this.cmbSubscriptions.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cmbSubscriptions.Location = new System.Drawing.Point(720, 24);
+            this.cmbSubscriptions.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.cmbSubscriptions.MaxDropDownItems = 15;
             this.cmbSubscriptions.Name = "cmbSubscriptions";
-            this.cmbSubscriptions.Size = new System.Drawing.Size(620, 24);
-            this.cmbSubscriptions.TabIndex = 32;
+            this.cmbSubscriptions.Size = new System.Drawing.Size(697, 28);
+            this.cmbSubscriptions.TabIndex = 1;
             this.cmbSubscriptions.SelectedIndexChanged += new System.EventHandler(this.cmbSubscriptions_SelectedIndexChanged);
             // 
             // lblSubscriptions
             // 
             this.lblSubscriptions.AutoSize = true;
-            this.lblSubscriptions.Location = new System.Drawing.Point(539, 22);
+            this.lblSubscriptions.Location = new System.Drawing.Point(606, 28);
             this.lblSubscriptions.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblSubscriptions.Name = "lblSubscriptions";
-            this.lblSubscriptions.Size = new System.Drawing.Size(93, 17);
+            this.lblSubscriptions.Size = new System.Drawing.Size(105, 20);
             this.lblSubscriptions.TabIndex = 33;
             this.lblSubscriptions.Text = "Subscriptions";
             // 
             // btnOptions
             // 
-            this.btnOptions.Location = new System.Drawing.Point(32, 62);
-            this.btnOptions.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.btnOptions.Location = new System.Drawing.Point(36, 78);
+            this.btnOptions.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.btnOptions.Name = "btnOptions";
-            this.btnOptions.Size = new System.Drawing.Size(172, 28);
+            this.btnOptions.Size = new System.Drawing.Size(194, 35);
             this.btnOptions.TabIndex = 34;
             this.btnOptions.Text = "Options...";
             this.btnOptions.UseVisualStyleBackColor = true;
@@ -167,11 +167,11 @@
             // lvwVirtualNetworks
             // 
             this.lvwVirtualNetworks.CheckBoxes = true;
-            this.lvwVirtualNetworks.Location = new System.Drawing.Point(30, 126);
+            this.lvwVirtualNetworks.Location = new System.Drawing.Point(34, 158);
             this.lvwVirtualNetworks.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.lvwVirtualNetworks.Name = "lvwVirtualNetworks";
-            this.lvwVirtualNetworks.Size = new System.Drawing.Size(313, 489);
-            this.lvwVirtualNetworks.TabIndex = 35;
+            this.lvwVirtualNetworks.Size = new System.Drawing.Size(352, 610);
+            this.lvwVirtualNetworks.TabIndex = 2;
             this.lvwVirtualNetworks.UseCompatibleStateImageBehavior = false;
             this.lvwVirtualNetworks.View = System.Windows.Forms.View.List;
             this.lvwVirtualNetworks.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.lvwVirtualNetworks_ItemChecked);
@@ -179,29 +179,29 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(28, 107);
+            this.label1.Location = new System.Drawing.Point(32, 134);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(110, 17);
+            this.label1.Size = new System.Drawing.Size(124, 20);
             this.label1.TabIndex = 36;
             this.label1.Text = "Virtual Networks";
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(352, 107);
+            this.label2.Location = new System.Drawing.Point(396, 134);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(120, 17);
+            this.label2.Size = new System.Drawing.Size(137, 20);
             this.label2.TabIndex = 36;
             this.label2.Text = "Storage Accounts";
             // 
             // lvwStorageAccounts
             // 
             this.lvwStorageAccounts.CheckBoxes = true;
-            this.lvwStorageAccounts.Location = new System.Drawing.Point(356, 126);
+            this.lvwStorageAccounts.Location = new System.Drawing.Point(400, 158);
             this.lvwStorageAccounts.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.lvwStorageAccounts.Name = "lvwStorageAccounts";
-            this.lvwStorageAccounts.Size = new System.Drawing.Size(296, 489);
-            this.lvwStorageAccounts.TabIndex = 35;
+            this.lvwStorageAccounts.Size = new System.Drawing.Size(332, 610);
+            this.lvwStorageAccounts.TabIndex = 3;
             this.lvwStorageAccounts.UseCompatibleStateImageBehavior = false;
             this.lvwStorageAccounts.View = System.Windows.Forms.View.List;
             this.lvwStorageAccounts.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.lvwStorageAccounts_ItemChecked);
@@ -209,9 +209,9 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(660, 107);
+            this.label3.Location = new System.Drawing.Point(742, 134);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(112, 17);
+            this.label3.Size = new System.Drawing.Size(126, 20);
             this.label3.TabIndex = 36;
             this.label3.Text = "Virtual Machines";
             // 
@@ -222,11 +222,11 @@
             this.colCloudService,
             this.colVMName});
             this.lvwVirtualMachines.FullRowSelect = true;
-            this.lvwVirtualMachines.Location = new System.Drawing.Point(664, 126);
+            this.lvwVirtualMachines.Location = new System.Drawing.Point(747, 158);
             this.lvwVirtualMachines.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.lvwVirtualMachines.Name = "lvwVirtualMachines";
-            this.lvwVirtualMachines.Size = new System.Drawing.Size(596, 489);
-            this.lvwVirtualMachines.TabIndex = 35;
+            this.lvwVirtualMachines.Size = new System.Drawing.Size(670, 610);
+            this.lvwVirtualMachines.TabIndex = 4;
             this.lvwVirtualMachines.UseCompatibleStateImageBehavior = false;
             this.lvwVirtualMachines.View = System.Windows.Forms.View.Details;
             this.lvwVirtualMachines.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.lvwVirtualMachines_ItemChecked);
@@ -244,18 +244,18 @@
             // lblSignInText
             // 
             this.lblSignInText.AutoSize = true;
-            this.lblSignInText.Location = new System.Drawing.Point(231, 22);
+            this.lblSignInText.Location = new System.Drawing.Point(260, 28);
             this.lblSignInText.Name = "lblSignInText";
-            this.lblSignInText.Size = new System.Drawing.Size(93, 17);
+            this.lblSignInText.Size = new System.Drawing.Size(106, 20);
             this.lblSignInText.TabIndex = 37;
             this.lblSignInText.Text = "Not Signed In";
             // 
             // Window
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.ClientSize = new System.Drawing.Size(1275, 702);
+            this.ClientSize = new System.Drawing.Size(1434, 878);
             this.Controls.Add(this.lblSignInText);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
@@ -274,7 +274,7 @@
             this.Controls.Add(this.btnGetToken);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.MaximizeBox = false;
             this.Name = "Window";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
