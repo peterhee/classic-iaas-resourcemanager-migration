@@ -52,6 +52,7 @@ namespace MIGAZ
             lvwVirtualNetworks.Items.Clear();
             lvwStorageAccounts.Items.Clear();
             lvwVirtualMachines.Items.Clear();
+            _asmRetriever._documentCache.Clear(); // need to clear cache to allow relogin without returning previous cached list of subscriptions
 
             string token = GetToken("common", PromptBehavior.Always, true);
 

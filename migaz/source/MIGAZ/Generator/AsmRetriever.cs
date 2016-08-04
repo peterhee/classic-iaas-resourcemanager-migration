@@ -17,7 +17,7 @@ namespace MIGAZ.Generator
         private ILogProvider _logProvider;
         private IStatusProvider _statusProvider;
 
-        private Dictionary<string, XmlDocument> _documentCache = new Dictionary<string, XmlDocument>();
+        public Dictionary<string, XmlDocument> _documentCache = new Dictionary<string, XmlDocument>();
 
         public AsmRetriever(ILogProvider logProvider, IStatusProvider statusProvider)
         {
@@ -98,8 +98,13 @@ namespace MIGAZ.Generator
 
             Application.DoEvents();
 
+            _logProvider.WriteLog("GetAzureASMResources", "GET " + url);
+
             if (_documentCache.ContainsKey(url))
             {
+                _logProvider.WriteLog("GetAzureASMResources", "FROM XML CACHE");
+                _logProvider.WriteLog("GetAzureASMResources", "End");
+                writeXMLtoFile(url, "Cached");
                 return _documentCache[url];
             }
 
@@ -108,7 +113,6 @@ namespace MIGAZ.Generator
             request.Headers.Add("x-ms-version", "2015-04-01");
             request.Method = "GET";
 
-            _logProvider.WriteLog("GetAzureASMResources", "GET " + url);
 
             string xml = "";
             try
