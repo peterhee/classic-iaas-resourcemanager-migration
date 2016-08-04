@@ -1088,8 +1088,8 @@ namespace MIGAZ.Generator
 
             XmlNode osvirtualharddisk = resource.SelectSingleNode("//OSVirtualHardDisk");
             string olddiskurl = osvirtualharddisk.SelectSingleNode("MediaLink").InnerText;
-            string[] splitarray = olddiskurl.Split(new char[] { '/', '.' });
-            string oldstorageaccountname = splitarray[2];
+            string[] splitarray = olddiskurl.Split(new char[] { '/' });
+            string oldstorageaccountname = splitarray[2].Split(new char[] { '.' })[0];
             string newstorageaccountname = oldstorageaccountname + app.Default.UniquenessSuffix;
             string newdiskurl = olddiskurl.Replace(oldstorageaccountname + ".", newstorageaccountname + ".");
 
@@ -1173,12 +1173,12 @@ namespace MIGAZ.Generator
 
                 CopyBlobDetail copyblobdetail = new CopyBlobDetail();
                 copyblobdetail.SourceSA = oldstorageaccountname;
-                copyblobdetail.SourceContainer = splitarray[7];
-                copyblobdetail.SourceBlob = splitarray[8] + "." + splitarray[9];
+                copyblobdetail.SourceContainer = splitarray[3];
+                copyblobdetail.SourceBlob = splitarray[4];
                 copyblobdetail.SourceKey = key;
                 copyblobdetail.DestinationSA = newstorageaccountname;
-                copyblobdetail.DestinationContainer = splitarray[7];
-                copyblobdetail.DestinationBlob = splitarray[8] + "." + splitarray[9];
+                copyblobdetail.DestinationContainer = splitarray[3];
+                copyblobdetail.DestinationBlob = splitarray[4];
                 _copyBlobDetails.Add(copyblobdetail);
                 // end of block of code to help copying the blobs to the new storage accounts
             }
@@ -1200,8 +1200,8 @@ namespace MIGAZ.Generator
                 }
 
                 olddiskurl = datadisknode.SelectSingleNode("MediaLink").InnerText;
-                splitarray = olddiskurl.Split(new char[] { '/', '.' });
-                oldstorageaccountname = splitarray[2];
+                splitarray = olddiskurl.Split(new char[] { '/' });
+                oldstorageaccountname = splitarray[2].Split(new char[] { '.' })[0];
                 newstorageaccountname = oldstorageaccountname + app.Default.UniquenessSuffix;
                 newdiskurl = olddiskurl.Replace(oldstorageaccountname + ".", newstorageaccountname + ".");
 
@@ -1224,12 +1224,12 @@ namespace MIGAZ.Generator
 
                     CopyBlobDetail copyblobdetail = new CopyBlobDetail();
                     copyblobdetail.SourceSA = oldstorageaccountname;
-                    copyblobdetail.SourceContainer = splitarray[7];
-                    copyblobdetail.SourceBlob = splitarray[8] + "." + splitarray[9];
+                    copyblobdetail.SourceContainer = splitarray[3];
+                    copyblobdetail.SourceBlob = splitarray[4];
                     copyblobdetail.SourceKey = key;
                     copyblobdetail.DestinationSA = newstorageaccountname;
-                    copyblobdetail.DestinationContainer = splitarray[7];
-                    copyblobdetail.DestinationBlob = splitarray[8] + "." + splitarray[9];
+                    copyblobdetail.DestinationContainer = splitarray[3];
+                    copyblobdetail.DestinationBlob = splitarray[4];
                     _copyBlobDetails.Add(copyblobdetail);
                     // end of block of code to help copying the blobs to the new storage accounts
                 }
