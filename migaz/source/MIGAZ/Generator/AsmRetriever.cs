@@ -17,7 +17,7 @@ namespace MIGAZ.Generator
         private ILogProvider _logProvider;
         private IStatusProvider _statusProvider;
 
-        private Dictionary<string, XmlDocument> _documentCache = new Dictionary<string, XmlDocument>();
+        public Dictionary<string, XmlDocument> _documentCache = new Dictionary<string, XmlDocument>();
 
         public AsmRetriever(ILogProvider logProvider, IStatusProvider statusProvider)
         {
