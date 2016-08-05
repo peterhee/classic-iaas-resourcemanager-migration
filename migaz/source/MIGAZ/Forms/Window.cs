@@ -56,16 +56,23 @@ namespace MIGAZ
 
             string token = GetToken("common", PromptBehavior.Always, true);
 
-            subscriptionsAndTenants = new Dictionary<string, string>();
-            foreach (XmlNode subscription in _asmRetriever.GetAzureASMResources("Subscriptions", null, null, token).SelectNodes("//Subscription"))
+            if (token != null)
             {
-                cmbSubscriptions.Items.Add(subscription.SelectSingleNode("SubscriptionID").InnerText + " | " + subscription.SelectSingleNode("SubscriptionName").InnerText);
-                subscriptionsAndTenants.Add(subscription.SelectSingleNode("SubscriptionID").InnerText, subscription.SelectSingleNode("AADTenantID").InnerText);
-            }
+                subscriptionsAndTenants = new Dictionary<string, string>();
+                foreach (XmlNode subscription in _asmRetriever.GetAzureASMResources("Subscriptions", null, null, token).SelectNodes("//Subscription"))
+                {
+                    cmbSubscriptions.Items.Add(subscription.SelectSingleNode("SubscriptionID").InnerText + " | " + subscription.SelectSingleNode("SubscriptionName").InnerText);
+                    subscriptionsAndTenants.Add(subscription.SelectSingleNode("SubscriptionID").InnerText, subscription.SelectSingleNode("AADTenantID").InnerText);
+                }
 
-            cmbSubscriptions.Enabled = true;
-            txtDestinationFolder.Enabled = true;
-            btnChoosePath.Enabled = true;
+                cmbSubscriptions.Enabled = true;
+                txtDestinationFolder.Enabled = true;
+                btnChoosePath.Enabled = true;
+            }
+            else
+            {
+                writeLog("GetToken_Click", "Failed to get token");
+            }
 
             lblStatus.Text = "Ready";
             writeLog("GetToken_Click", "End");
@@ -78,19 +85,25 @@ namespace MIGAZ
             AuthenticationContext context = new AuthenticationContext(ServiceUrls.GetLoginUrl(app.Default.AzureEnvironment) + tenantId);
 
             AuthenticationResult result = null;
-            result = context.AcquireToken(ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment), app.Default.ClientId, new Uri(app.Default.ReturnURL), promptBehavior);
-            if (result == null)
+            try
             {
-                throw new InvalidOperationException("Failed to obtain the token");
-            }
-            if (updateUI)
-            {
-                lblSignInText.Text = $"Signed in as {result.UserInfo.DisplayableId}";
-            }
+                result = context.AcquireToken(ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment), app.Default.ClientId, new Uri(app.Default.ReturnURL), promptBehavior);
+                if (result == null)
+                {
+                    throw new InvalidOperationException("Failed to obtain the token");
+                }
+                if (updateUI)
+                {
+                    lblSignInText.Text = $"Signed in as {result.UserInfo.DisplayableId}";
+                }
 
-            return result.AccessToken;
-             
-          
+                return result.AccessToken;
+            }
+            catch (Exception exception)
+            {
+                DialogResult dialogresult = MessageBox.Show(exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return null;
+            }
         }
 
        
@@ -250,15 +263,22 @@ namespace MIGAZ
             request.Method = "GET";
             request.ContentType = "application/x-www-form-urlencoded";
 
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-            string result = new StreamReader(response.GetResponseStream()).ReadToEnd();
-
-            string version = "\"" + Assembly.GetEntryAssembly().GetName().Version.ToString() + "\"";
-            string availableversion = result.ToString();
-
-            if (version != availableversion)
+            try
             {
-                DialogResult dialogresult = MessageBox.Show("New version " + availableversion + " is available at http://aka.ms/MIGAZ", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                string result = new StreamReader(response.GetResponseStream()).ReadToEnd();
+
+                string version = "\"" + Assembly.GetEntryAssembly().GetName().Version.ToString() + "\"";
+                string availableversion = result.ToString();
+
+                if (version != availableversion)
+                {
+                    DialogResult dialogresult = MessageBox.Show("New version " + availableversion + " is available at http://aka.ms/MIGAZ", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception exception)
+            {
+                DialogResult dialogresult = MessageBox.Show(exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

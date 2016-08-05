@@ -124,7 +124,9 @@ namespace MIGAZ.Generator
             catch (Exception exception)
             {
                 _logProvider.WriteLog("GetAzureASMResources", "EXCEPTION " + exception.Message);
+                DialogResult dialogresult = MessageBox.Show(exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 xml = "";
+                Application.ExitThread();
             }
 
             if (xml != "")

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace MIGAZ.Generator
 {
@@ -25,19 +26,26 @@ namespace MIGAZ.Generator
             ASCIIEncoding encoding = new ASCIIEncoding();
             byte[] data = encoding.GetBytes(jsontext);
 
-            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("https://asmtoarmtoolapi.azurewebsites.net/api/telemetry");
-            request.Method = "POST";
-            request.ContentType = "application/json";
-            request.ContentLength = data.Length;
+            try
+            {
+                HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("https://asmtoarmtoolapi.azurewebsites.net/api/telemetry");
+                request.Method = "POST";
+                request.ContentType = "application/json";
+                request.ContentLength = data.Length;
 
-            Stream stream = request.GetRequestStream();
-            stream.Write(data, 0, data.Length);
-            stream.Close();
+                Stream stream = request.GetRequestStream();
+                stream.Write(data, 0, data.Length);
+                stream.Close();
 
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-            string result = new StreamReader(response.GetResponseStream()).ReadToEnd();
+                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                string result = new StreamReader(response.GetResponseStream()).ReadToEnd();
 
-            //TelemetryRecord mytelemetry = (TelemetryRecord)JsonConvert.DeserializeObject(jsontext, typeof(TelemetryRecord));
+                //TelemetryRecord mytelemetry = (TelemetryRecord)JsonConvert.DeserializeObject(jsontext, typeof(TelemetryRecord));
+            }
+            catch (Exception exception)
+            {
+                DialogResult dialogresult = MessageBox.Show(exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }
