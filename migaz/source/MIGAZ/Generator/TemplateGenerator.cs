@@ -1275,16 +1275,18 @@ namespace MIGAZ.Generator
                 {
                     string json = Base64Decode(resourceextensionreference.SelectSingleNode("ResourceExtensionParameterValues/ResourceExtensionParameterValue/Value").InnerText);
                     var resourceextensionparametervalue = JsonConvert.DeserializeObject<dynamic>(json);
-                    string diagnosticsstorageaccount = resourceextensionparametervalue.storageAccount.Value;
-                    string xmlcfg = Base64Decode(resourceextensionparametervalue.xmlCfg.Value);
+                    string diagnosticsstorageaccount = resourceextensionparametervalue.storageAccount.Value + app.Default.UniquenessSuffix;
+                    string xmlcfgvalue = Base64Decode(resourceextensionparametervalue.xmlCfg.Value);
+
+                    string xmlcfg = resourceextensionparametervalue.xmlCfg.Value;
 
                     extension_iaasdiagnostics = new Extension();
                     extension_iaasdiagnostics.name = "Microsoft.Insights.VMDiagnosticsSettings";
-                    extension_iaasdiagnostics.type = "Microsoft.Compute/virtualMachines/extensions";
+                    extension_iaasdiagnostics.type = "extensions";
                     extension_iaasdiagnostics.location = virtualmachineinfo["location"].ToString();
                     extension_iaasdiagnostics.dependsOn = new List<string>();
                     extension_iaasdiagnostics.dependsOn.Add("[concat(resourceGroup().id, '/providers/Microsoft.Compute/virtualMachines/" + virtualmachinename + "')]");
-                    extension_iaasdiagnostics.dependsOn.Add("[concat(resourceGroup().id, '/Microsoft.Storage/storageAccounts/" + diagnosticsstorageaccount + "')]");
+                    extension_iaasdiagnostics.dependsOn.Add("[concat(resourceGroup().id, '/providers/Microsoft.Storage/storageAccounts/" + diagnosticsstorageaccount + "')]");
 
                     Extension_Properties extension_iaasdiagnostics_properties = new Extension_Properties();
                     extension_iaasdiagnostics_properties.publisher = "Microsoft.Azure.Diagnostics";
@@ -1292,7 +1294,7 @@ namespace MIGAZ.Generator
                     extension_iaasdiagnostics_properties.typeHandlerVersion = "1.5";
                     extension_iaasdiagnostics_properties.autoUpgradeMinorVersion = true;
                     extension_iaasdiagnostics_properties.settings = new Dictionary<string, string>();
-                    extension_iaasdiagnostics_properties.settings.Add("xmlCfg", xmlcfg);
+                    extension_iaasdiagnostics_properties.settings.Add("xmlCfg", "[base64('" + xmlcfgvalue + "')]");
                     extension_iaasdiagnostics_properties.settings.Add("storageAccount", diagnosticsstorageaccount);
                     extension_iaasdiagnostics.properties = new Extension_Properties();
                     extension_iaasdiagnostics.properties = extension_iaasdiagnostics_properties;
