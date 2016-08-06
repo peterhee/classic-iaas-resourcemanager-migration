@@ -94,6 +94,9 @@ namespace MIGAZ.Generator
                 case "VMImages":
                     url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/images";
                     break;
+                case "ReservedIPs":
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/reservedips";
+                    break;
             }
 
             Application.DoEvents();

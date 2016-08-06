@@ -6,8 +6,6 @@ using System.Net;
 using System.IO;
 using System.Xml;
 using System.Collections.Generic;
-using Newtonsoft.Json;
-using System.Text;
 using System.Reflection;
 using MIGAZ.Models;
 using MIGAZ.Generator;
@@ -163,6 +161,9 @@ namespace MIGAZ
                         }
                     }
                 }
+
+                lblStatus.Text = "BUSY: Getting Reserved IPs";
+                XmlDocument reservedips = _asmRetriever.GetAzureASMResources("ReservedIPs", subscriptionid, null, token);
 
                 lblStatus.Text = "Ready";
 
