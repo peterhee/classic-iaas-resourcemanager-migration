@@ -192,9 +192,12 @@ namespace MIGAZ.Generator
             string publicipallocationmethod = "Dynamic";
             foreach (XmlNode reservedip in reservedips.SelectNodes("/ReservedIPs/ReservedIP"))
             {
-                if (reservedip.SelectSingleNode("ServiceName").InnerText == cloudservicename)
+                if (reservedip.SelectNodes("ServiceName").Count > 0)
                 {
-                    publicipallocationmethod = "Static";
+                    if (reservedip.SelectSingleNode("ServiceName").InnerText == cloudservicename)
+                    {
+                        publicipallocationmethod = "Static";
+                    }
                 }
             }
 
