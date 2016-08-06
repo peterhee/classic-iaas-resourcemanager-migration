@@ -210,6 +210,8 @@ namespace MIGAZ
 
         private void btnExport_Click(object sender, EventArgs e)
         {
+            btnExport.Enabled = false;
+
             var artefacts = new AsmArtefacts();
             foreach (var selectedItem in lvwStorageAccounts.CheckedItems)
             {
@@ -245,6 +247,8 @@ namespace MIGAZ
                 _templateGenerator.GenerateTemplate(subscriptionsAndTenants[subscriptionid], subscriptionid, artefacts, templateWriter, blobDetailWriter);
                 MessageBox.Show("Template has been generated successfully.", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
+
+            btnExport.Enabled = true;
         }
 
         
