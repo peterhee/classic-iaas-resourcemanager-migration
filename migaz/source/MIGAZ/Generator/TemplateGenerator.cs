@@ -148,8 +148,18 @@ namespace MIGAZ.Generator
             // post Telemetry Record to ASMtoARMToolAPI
             if (app.Default.AllowTelemetry)
             {
+                XmlDocument subscriptions = _asmRetriever.GetAzureASMResources("Subscriptions", subscriptionId, null, token);
+                string offercategories = "";
+                foreach (XmlNode subscription in subscriptions.SelectNodes("/Subscriptions/Subscription"))
+                {
+                    if (subscription.SelectSingleNode("SubscriptionID").InnerText == subscriptionId)
+                    {
+                        offercategories = subscription.SelectSingleNode("OfferCategories").InnerText;
+                    }
+                }
+
                 _statusProvider.UpdateStatus("BUSY: saving telemetry information");
-                _telemetryProvider.PostTelemetryRecord(tenantId, subscriptionId, _processedItems);
+                _telemetryProvider.PostTelemetryRecord(tenantId, subscriptionId, _processedItems, offercategories);
             }
 
             _statusProvider.UpdateStatus("Ready");

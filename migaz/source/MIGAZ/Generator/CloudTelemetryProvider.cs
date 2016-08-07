@@ -14,24 +14,24 @@ namespace MIGAZ.Generator
 {
     public class CloudTelemetryProvider : ITelemetryProvider
     {
-        public void PostTelemetryRecord(string tenantId, string subscriptionId, Dictionary<string, string> processedItems)
+        public void PostTelemetryRecord(string tenantId, string subscriptionId, Dictionary<string, string> processedItems, string offercategories)
         {
             TelemetryRecord telemetryrecord = new TelemetryRecord();
             telemetryrecord.ExecutionId = Guid.Parse(app.Default.ExecutionId);
             telemetryrecord.SubscriptionId = new Guid(subscriptionId);
             telemetryrecord.TenantId = tenantId;
+            telemetryrecord.OfferCategories = offercategories;
+            telemetryrecord.SourceVersion = Assembly.GetEntryAssembly().GetName().Version.ToString();
             telemetryrecord.ProcessedResources = processedItems;
 
             string jsontext = JsonConvert.SerializeObject(telemetryrecord, Newtonsoft.Json.Formatting.Indented, new JsonSerializerSettings { NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore });
-
             ASCIIEncoding encoding = new ASCIIEncoding();
             byte[] data = encoding.GetBytes(jsontext);
 
             try
             {
-                string sourceversion = Assembly.GetEntryAssembly().GetName().Version.ToString();
-
-                HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("https://asmtoarmtoolapi.azurewebsites.net/api/telemetry?sourceVersion=" + sourceversion);
+                HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("http://localhost:1310/api/telemetry");
+                //HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("https://asmtoarmtoolapi.azurewebsites.net/api/telemetry?sourceVersion=" + sourceversion);
                 request.Method = "POST";
                 request.ContentType = "application/json";
                 request.ContentLength = data.Length;
