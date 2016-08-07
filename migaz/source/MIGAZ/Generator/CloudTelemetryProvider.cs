@@ -30,8 +30,7 @@ namespace MIGAZ.Generator
 
             try
             {
-                HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("http://localhost:1310/api/telemetry");
-                //HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("https://asmtoarmtoolapi.azurewebsites.net/api/telemetry?sourceVersion=" + sourceversion);
+                HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("https://asmtoarmtoolapi.azurewebsites.net/api/telemetry");
                 request.Method = "POST";
                 request.ContentType = "application/json";
                 request.ContentLength = data.Length;
