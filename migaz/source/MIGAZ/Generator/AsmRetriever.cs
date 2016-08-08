@@ -94,6 +94,9 @@ namespace MIGAZ.Generator
                 case "VMImages":
                     url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/images";
                     break;
+                case "ReservedIPs":
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/reservedips";
+                    break;
             }
 
             Application.DoEvents();
@@ -124,7 +127,9 @@ namespace MIGAZ.Generator
             catch (Exception exception)
             {
                 _logProvider.WriteLog("GetAzureASMResources", "EXCEPTION " + exception.Message);
+                DialogResult dialogresult = MessageBox.Show(exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 xml = "";
+                Application.ExitThread();
             }
 
             if (xml != "")

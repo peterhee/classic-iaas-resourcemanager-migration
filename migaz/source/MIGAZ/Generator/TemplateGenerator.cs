@@ -96,7 +96,8 @@ namespace MIGAZ.Generator
 
                 _statusProvider.UpdateStatus("BUSY: Exporting Cloud Service : " + cloudServiceVM.CloudService);
 
-                BuildPublicIPAddressObject(cloudservice, loadBalancerName);
+                XmlDocument reservedips = _asmRetriever.GetAzureASMResources("ReservedIPs", subscriptionId, null, token);
+                BuildPublicIPAddressObject(cloudservice, loadBalancerName, cloudServiceVM.CloudService, reservedips);
                 BuildLoadBalancerObject(subscriptionId, cloudservice, loadBalancerName, artefacts, token);
         
                 Hashtable virtualmachineinfo = new Hashtable();
@@ -132,12 +133,14 @@ namespace MIGAZ.Generator
             template.parameters = _parameters;
 
             // save JSON template
+            _statusProvider.UpdateStatus("BUSY: saving JSON template");
             string jsontext = JsonConvert.SerializeObject(template, Newtonsoft.Json.Formatting.Indented, new JsonSerializerSettings { NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore });
             jsontext = jsontext.Replace("schemalink", "$schema");
             WriteStream(templateWriter, jsontext);
             _logProvider.WriteLog("GenerateTemplate", "Write file export.json");
 
             // save blob copy details file
+            _statusProvider.UpdateStatus("BUSY: saving blob copy details file");
             jsontext = JsonConvert.SerializeObject(_copyBlobDetails, Newtonsoft.Json.Formatting.Indented, new JsonSerializerSettings { NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore });
             WriteStream(blobDetailWriter, jsontext);
             _logProvider.WriteLog("GenerateTemplate", "Write file copyblobdetails.json");
@@ -145,7 +148,18 @@ namespace MIGAZ.Generator
             // post Telemetry Record to ASMtoARMToolAPI
             if (app.Default.AllowTelemetry)
             {
-                _telemetryProvider.PostTelemetryRecord(tenantId, subscriptionId, _processedItems);
+                XmlDocument subscriptions = _asmRetriever.GetAzureASMResources("Subscriptions", subscriptionId, null, token);
+                string offercategories = "";
+                foreach (XmlNode subscription in subscriptions.SelectNodes("/Subscriptions/Subscription"))
+                {
+                    if (subscription.SelectSingleNode("SubscriptionID").InnerText == subscriptionId)
+                    {
+                        offercategories = subscription.SelectSingleNode("OfferCategories").InnerText;
+                    }
+                }
+
+                _statusProvider.UpdateStatus("BUSY: saving telemetry information");
+                _telemetryProvider.PostTelemetryRecord(tenantId, subscriptionId, _processedItems, offercategories);
             }
 
             _statusProvider.UpdateStatus("Ready");
@@ -179,17 +193,30 @@ namespace MIGAZ.Generator
             _logProvider.WriteLog("BuildPublicIPAddressObject", "End");
         }
 
-        private void BuildPublicIPAddressObject(XmlNode resource, string loadbalancername)
+        private void BuildPublicIPAddressObject(XmlNode resource, string loadbalancername, string cloudservicename, XmlDocument reservedips)
         {
             _logProvider.WriteLog("BuildPublicIPAddressObject", "Start");
 
             string publicipaddress_name = loadbalancername;
+
+            string publicipallocationmethod = "Dynamic";
+            foreach (XmlNode reservedip in reservedips.SelectNodes("/ReservedIPs/ReservedIP"))
+            {
+                if (reservedip.SelectNodes("ServiceName").Count > 0)
+                {
+                    if (reservedip.SelectSingleNode("ServiceName").InnerText == cloudservicename)
+                    {
+                        publicipallocationmethod = "Static";
+                    }
+                }
+            }
 
             Hashtable dnssettings = new Hashtable();
             dnssettings.Add("domainNameLabel", (publicipaddress_name + app.Default.UniquenessSuffix).ToLower());
 
             PublicIPAddress_Properties publicipaddress_properties = new PublicIPAddress_Properties();
             publicipaddress_properties.dnsSettings = dnssettings;
+            publicipaddress_properties.publicIPAllocationMethod = publicipallocationmethod;
 
             PublicIPAddress publicipaddress = new PublicIPAddress();
             publicipaddress.name = publicipaddress_name + "-PIP";
@@ -707,8 +734,12 @@ namespace MIGAZ.Generator
                     localnetworkgateway.location = virtualnetwork.location;
                     localnetworkgateway.properties = localnetworkgateway_properties;
 
-                    _processedItems.Add("Microsoft.Network/localNetworkGateways/" + localnetworkgateway.name, localnetworkgateway.location);
-                    _resources.Add(localnetworkgateway);
+                    try
+                    {
+                        _processedItems.Add("Microsoft.Network/localNetworkGateways/" + localnetworkgateway.name, localnetworkgateway.location);
+                        _resources.Add(localnetworkgateway);
+                    }
+                    catch { }
                     _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/localNetworkGateways/" + localnetworkgateway.name);
 
                     // Connections
@@ -1258,6 +1289,51 @@ namespace MIGAZ.Generator
             List<string> dependson = new List<string>();
             dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/networkInterfaces/" + networkinterfacename + "')]");
 
+            // Diagnostics Extension
+            Extension extension_iaasdiagnostics = null;
+
+            //XmlNodeList resourceextensionreferences = resource.SelectNodes("//ResourceExtensionReferences/ResourceExtensionReference");
+            //foreach (XmlNode resourceextensionreference in resourceextensionreferences)
+            //{
+            //    if (resourceextensionreference.SelectSingleNode("Name").InnerText == "IaaSDiagnostics")
+            //    {
+            //        string json = Base64Decode(resourceextensionreference.SelectSingleNode("ResourceExtensionParameterValues/ResourceExtensionParameterValue/Value").InnerText);
+            //        var resourceextensionparametervalue = JsonConvert.DeserializeObject<dynamic>(json);
+            //        string diagnosticsstorageaccount = resourceextensionparametervalue.storageAccount.Value + app.Default.UniquenessSuffix;
+            //        string xmlcfgvalue = Base64Decode(resourceextensionparametervalue.xmlCfg.Value);
+            //        xmlcfgvalue = xmlcfgvalue.Replace("\n", "");
+            //        xmlcfgvalue = xmlcfgvalue.Replace("\r", "");
+
+            //        XmlDocument xmlcfg = new XmlDocument();
+            //        xmlcfg.LoadXml(xmlcfgvalue);
+
+            //        XmlNodeList mynodelist = xmlcfg.SelectNodes("/wadCfg/DiagnosticMonitorConfiguration/Metrics");
+
+
+                    
+
+            //        extension_iaasdiagnostics = new Extension();
+            //        extension_iaasdiagnostics.name = "Microsoft.Insights.VMDiagnosticsSettings";
+            //        extension_iaasdiagnostics.type = "extensions";
+            //        extension_iaasdiagnostics.location = virtualmachineinfo["location"].ToString();
+            //        extension_iaasdiagnostics.dependsOn = new List<string>();
+            //        extension_iaasdiagnostics.dependsOn.Add("[concat(resourceGroup().id, '/providers/Microsoft.Compute/virtualMachines/" + virtualmachinename + "')]");
+            //        extension_iaasdiagnostics.dependsOn.Add("[concat(resourceGroup().id, '/providers/Microsoft.Storage/storageAccounts/" + diagnosticsstorageaccount + "')]");
+
+            //        Extension_Properties extension_iaasdiagnostics_properties = new Extension_Properties();
+            //        extension_iaasdiagnostics_properties.publisher = "Microsoft.Azure.Diagnostics";
+            //        extension_iaasdiagnostics_properties.type = "IaaSDiagnostics";
+            //        extension_iaasdiagnostics_properties.typeHandlerVersion = "1.5";
+            //        extension_iaasdiagnostics_properties.autoUpgradeMinorVersion = true;
+            //        extension_iaasdiagnostics_properties.settings = new Dictionary<string, string>();
+            //        extension_iaasdiagnostics_properties.settings.Add("xmlCfg", "[base64('" + xmlcfgvalue + "')]");
+            //        extension_iaasdiagnostics_properties.settings.Add("storageAccount", diagnosticsstorageaccount);
+            //        extension_iaasdiagnostics.properties = new Extension_Properties();
+            //        extension_iaasdiagnostics.properties = extension_iaasdiagnostics_properties;
+            //    }
+            //}
+            
+            // Availability Set
             string availabilitysetname = virtualmachineinfo["cloudservicename"] + "-defaultAS";
             if (resource.SelectSingleNode("//AvailabilitySetName") != null)
             {
@@ -1283,6 +1359,8 @@ namespace MIGAZ.Generator
             virtualmachine.location = virtualmachineinfo["location"].ToString();
             virtualmachine.properties = virtualmachine_properties;
             virtualmachine.dependsOn = dependson;
+            virtualmachine.resources = new List<Resource>();
+            if (extension_iaasdiagnostics != null) { virtualmachine.resources.Add(extension_iaasdiagnostics); }
 
             _processedItems.Add("Microsoft.Compute/virtualMachines/" + virtualmachine.name, virtualmachine.location);
             _resources.Add(virtualmachine);
@@ -1344,7 +1422,17 @@ namespace MIGAZ.Generator
             return hexres.ToArray();
         }
 
+        public static string Base64Decode(string base64EncodedData)
+        {
+            byte[] base64EncodedBytes = System.Convert.FromBase64String(base64EncodedData);
+            return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
+        }
 
+        public static string Base64Encode(string plainText)
+        {
+            byte[] plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
+            return System.Convert.ToBase64String(plainTextBytes);
+        }
 
         private string GetVMSize(string vmsize)
         {
