@@ -768,17 +768,25 @@ namespace MIGAZ.Generator
 
                     virtualnetworkgatewayinfo["localnetworksitename"] = LocalNetworkSite.SelectSingleNode("Name").InnerText;
                     XmlDocument connectionsharekey = _asmRetriever.GetAzureASMResources("VirtualNetworkGatewaySharedKey", subscriptionId, virtualnetworkgatewayinfo, token);
-                    gatewayconnection_properties.sharedKey = connectionsharekey.SelectSingleNode("//Value").InnerText;
 
-                    GatewayConnection gatewayconnection = new GatewayConnection();
-                    gatewayconnection.name = virtualnetworkgateway.name + "-" + localnetworkgateway.name + "-connection";
-                    gatewayconnection.location = virtualnetwork.location;
-                    gatewayconnection.properties = gatewayconnection_properties;
-                    gatewayconnection.dependsOn = dependson;
+                    if (!(connectionsharekey == null))
+                    {
+                        gatewayconnection_properties.sharedKey = connectionsharekey.SelectSingleNode("//Value").InnerText;
 
-                    _processedItems.Add("Microsoft.Network/connections/" + gatewayconnection.name, gatewayconnection.location);
-                    _resources.Add(gatewayconnection);
-                    _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/connections/" + gatewayconnection.name);
+                        GatewayConnection gatewayconnection = new GatewayConnection();
+                        gatewayconnection.name = virtualnetworkgateway.name + "-" + localnetworkgateway.name + "-connection";
+                        gatewayconnection.location = virtualnetwork.location;
+                        gatewayconnection.properties = gatewayconnection_properties;
+                        gatewayconnection.dependsOn = dependson;
+
+                        _processedItems.Add("Microsoft.Network/connections/" + gatewayconnection.name, gatewayconnection.location);
+                        _resources.Add(gatewayconnection);
+                        _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/connections/" + gatewayconnection.name);
+                    }
+                    else
+                    {
+                        _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/connections/" + " NO SHARED KEY DEFINED");
+                    }
                 }
             }
 

@@ -132,7 +132,7 @@ namespace MIGAZ.Generator
                 _logProvider.WriteLog("GetAzureASMResources", "EXCEPTION " + exception.Message);
                 DialogResult dialogresult = MessageBox.Show(exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 xml = "";
-                Application.ExitThread();
+                //Application.ExitThread();
             }
 
             if (xml != "")
