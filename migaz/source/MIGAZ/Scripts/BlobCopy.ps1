@@ -13,10 +13,17 @@ param (
     $RefreshInterval = 10
 )
 
-# Check Azure.Storage version - minimum 1.1.3 required
-if ((get-command New-AzureStorageContext).Version.ToString() -lt '1.1.3')
+# Check Azure.Storage version - minimum 2.0.1 required
+if ((get-command New-AzureStorageContext).Version.ToString() -lt '2.0.1')
 {
-    Write-Host 'Please update Azure.Storage module to 1.1.3 or higher before running this script' -ForegroundColor Yellow
+    Write-Host 'Please update Azure.Storage module to 2.0.1 or higher before running this script' -ForegroundColor Yellow
+    Exit
+}
+
+# Check AzureRM.Storage version - minimum 2.0.1 required
+if ((get-command Get-AzureRmStorageAccountKey).Version.ToString() -lt '2.0.1')
+{
+    Write-Host 'Please update AzureRM.Storage module to 2.0.1 or higher before running this script' -ForegroundColor Yellow
     Exit
 }
 
