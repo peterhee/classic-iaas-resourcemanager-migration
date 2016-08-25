@@ -6,7 +6,7 @@ param (
     [Parameter(Mandatory = $true)] 
     $DetailsFilePath,
 
-    [ValidateSet("StartBlobCopy", "MonitorBlobCopy")]
+    [ValidateSet("StartBlobCopy", "MonitorBlobCopy", "CancelBlobCopy")]
     [Parameter(Mandatory = $true)] 
     $StartType,
 
@@ -108,6 +108,38 @@ If ($StartType -eq "MonitorBlobCopy")
 
         Start-Sleep -Seconds $refreshinterval
     }
+
+    # Delete used snapshots
+    foreach ($copyblobdetail in $copyblobdetails)
+    {
+        # Create source storage account context
+        $source_context = New-AzureStorageContext -StorageAccountName $copyblobdetail.SourceSA -StorageAccountKey $copyblobdetail.SourceKey
+
+        $source_container = Get-AzureStorageContainer -Context $source_context -Name $copyblobdetail.SourceContainer
+        $blobs = $source_container.CloudBlobContainer.ListBlobs($copyblobdetail.SourceBlob, $true, "Snapshots") | Where-Object { $_.SnapshotTime -ne $null -and $_.SnapshotTime.DateTime.ToString() -EQ $copyblobdetail.SnapshotTime }
+        $blobs[0].Delete()
+    }
+}
+
+
+# If to Cancel blobs copy
+If ($StartType -eq "CancelBlobCopy")
+{
+    foreach ($copyblobdetail in $copyblobdetails)
+    {
+        if ($copyblobdetail.Status -ne "Success" -and $copyblobdetail.Status -ne "Failed")
+        {
+            $destination_context = New-AzureStorageContext -StorageAccountName $copyblobdetail.DestinationSA -StorageAccountKey $copyblobdetail.DestinationKey
+            Stop-AzureStorageBlobCopy -Context $destination_context -Container $copyblobdetail.DestinationContainer -Blob $copyblobdetail.DestinationBlob -Force -Verbose
+
+            $copyblobdetail.Status = "Canceled"
+            $copyblobdetail.EndTime = Get-Date -Format u
+        }
+    }
+
+    $copyblobdetails | ConvertTo-Json -Depth 100 | Out-File $DetailsFilePath
+    # cls
+    $copyblobdetails | select DestinationSA, DestinationContainer, DestinationBlob, Status, BytesCopied, TotalBytes, StartTime, EndTime | Format-Table -AutoSize
 
     # Delete used snapshots
     foreach ($copyblobdetail in $copyblobdetails)

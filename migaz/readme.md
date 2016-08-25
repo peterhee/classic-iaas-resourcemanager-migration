@@ -113,7 +113,7 @@ Post successful authentication the Subscriptions will be loaded.
 
 Execute steps 7 to 9 only if virtual machines were included on the export.
 
-**Step 7:** initiate and complete the blob copy the required OS disks and data disks using BlobCopy.PS1 script
+**Step 7:** initiate and complete the blob copy of the required OS disks and data disks using BlobCopy.PS1 script
 
 > BlobCopy.ps1 script creates temporary snapshots to copy the blobs. This means that it will be able to copy disks from running virtual machines. But, depending on the workload, it can be absolutely required to stop the virtual machine to guarantee data consistency. This is the case, for example, for virtual machines using multiple data disks to create stripped volumes (like storage spaces).
 
@@ -126,6 +126,10 @@ Execute steps 7 to 9 only if virtual machines were included on the export.
     .\BlobCopy.ps1 -ResourcegroupName "<Resource Group Name>" -DetailsFilePath "<Full Path of copyblobdetails.JSON>" -StartType MonitorBlobCopy
 
 > Always run above commands in sequence. The first, creates the snapshots and initiate the asynchronous copies. The second, will monitor the asynchronous copy status of each blob and clean the snapshots at the end.
+
+> Additional note: if you need to cancel the blobs copy jobs run this command
+
+    .\BlobCopy.ps1 -ResourcegroupName "<Resource Group Name>" -DetailsFilePath "<Full Path of copyblobdetails.JSON>" -StartType CancelBlobCopy
 
 **Step 8:** Once the BlobCopy is completed re-deploy the export.JSON template (step 7) since the VHD’s required for the virtual machines are available now.
 
