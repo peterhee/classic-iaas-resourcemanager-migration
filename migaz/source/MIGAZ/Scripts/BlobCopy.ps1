@@ -70,7 +70,7 @@ If ($StartType -eq "StartBlobCopy")
         $copyblobdetailsout += $copyblobdetail
 
         # Updates screen table
-        cls
+        # cls
         $copyblobdetails | select DestinationSA, DestinationContainer, DestinationBlob, Status, BytesCopied, TotalBytes, StartTime, EndTime | Format-Table -AutoSize
     }
 
@@ -103,7 +103,7 @@ If ($StartType -eq "MonitorBlobCopy")
         }
 
         $copyblobdetails | ConvertTo-Json -Depth 100 | Out-File $DetailsFilePath
-        cls
+        # cls
         $copyblobdetails | select DestinationSA, DestinationContainer, DestinationBlob, Status, BytesCopied, TotalBytes, StartTime, EndTime | Format-Table -AutoSize
 
         Start-Sleep -Seconds $refreshinterval
