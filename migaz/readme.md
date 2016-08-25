@@ -70,7 +70,7 @@ The tool uses Service Management REST API calls to gather all the details on Net
 
 <br>
 
-> migAz is not supported by Microsoft Support. Therefore, it is open sourced on Github and we're happy to accept pull requests for fixes or additional features.
+> migAz is not supported by Microsoft Support, but for the critical steps uses two powershell cmdlets that are fully supported: New-AzureRmResourceGroupDeployment and Start-AzureStorageBlobCopy. It is open sourced on Github and we're happy to accept pull requests for fixes or additional features.
 
 <br>
 
