@@ -187,3 +187,30 @@ As the Storage Accounts supports a maximum of 24 characters in the name, and the
 ### Troubleshooting
 The detailed logs and output of the REST API are captured in the location %USERPROFILE%\appdata\Local with the file name migAz-&lt;YYYYMMDD&gt;.log and migAz-XML-&lt;YYYYMMDD&gt;.log.
 In case of any issues during the deployment of the export.JSON you need to troubleshoot the template properties and fix the invalid entries. Report any issue on the tool site.
+
+
+## Release Notes
+
+### v1.4.4.0
+- Add requirement for Azure.Storage and AzureRM.Storage modules to be 2.0.1
+- Add to BloblCopy.ps1 the option to cancel the blobs copy jobs
+- Remove clear screen command from BlobCopy.ps1 bor better results reading
+
+### v1.4.3.0
+- Add ability to export resources deployed on Affinity Groups
+- Prevent exception when VPN Gateway connection shared key is not defined
+
+### v1.4.2.1
+- . Fix reported issue when logging directory does not exist
+
+### v1.4.2.0
+- Process Cloud Services Reserved IPs to Static Public IPs
+- Add tool version and subscription offer categories to telemetry
+- Improvements on typical exceptions handling
+- Minor UI updates
+
+### v1.4.1.1
+- Correcting case where VM disk URL does not end with ".vhd". Not an usual situation, but possible.
+- Add logging when retrieving objects from xml cache
+- Correcting TabIndex for better usability
+- Resetting xml cache when re-login
