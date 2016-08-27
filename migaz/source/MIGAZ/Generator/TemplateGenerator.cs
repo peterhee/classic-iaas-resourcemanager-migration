@@ -20,6 +20,7 @@ namespace MIGAZ.Generator
         private Dictionary<string, Parameter> _parameters;
         private List<CopyBlobDetail> _copyBlobDetails;
         private Dictionary<string, string> _processedItems;
+        public Dictionary<string, string> _storageAccountNames;
 
         public TemplateGenerator(ILogProvider logProvider, IStatusProvider statusProvider, ITelemetryProvider telemetryProvider, ITokenProvider tokenProvider, AsmRetriever asmRetriever)
         {
@@ -39,7 +40,8 @@ namespace MIGAZ.Generator
 
             _processedItems = new Dictionary<string, string>();
             _copyBlobDetails = new List<CopyBlobDetail>();
-
+            _storageAccountNames = new Dictionary<string, string>();
+            
             var token = _tokenProvider.GetToken(tenantId);
 
             _logProvider.WriteLog("GenerateTemplate", "Start processing selected virtual networks");
@@ -1138,7 +1140,7 @@ namespace MIGAZ.Generator
             string olddiskurl = osvirtualharddisk.SelectSingleNode("MediaLink").InnerText;
             string[] splitarray = olddiskurl.Split(new char[] { '/' });
             string oldstorageaccountname = splitarray[2].Split(new char[] { '.' })[0];
-            string newstorageaccountname = oldstorageaccountname + app.Default.UniquenessSuffix;
+            string newstorageaccountname = GetNewStorageAccountName(oldstorageaccountname);
             string newdiskurl = olddiskurl.Replace(oldstorageaccountname + ".", newstorageaccountname + ".");
 
             Hashtable storageaccountdependencies = new Hashtable();
@@ -1250,7 +1252,7 @@ namespace MIGAZ.Generator
                 olddiskurl = datadisknode.SelectSingleNode("MediaLink").InnerText;
                 splitarray = olddiskurl.Split(new char[] { '/' });
                 oldstorageaccountname = splitarray[2].Split(new char[] { '.' })[0];
-                newstorageaccountname = oldstorageaccountname + app.Default.UniquenessSuffix;
+                newstorageaccountname = GetNewStorageAccountName(oldstorageaccountname);
                 newdiskurl = olddiskurl.Replace(oldstorageaccountname + ".", newstorageaccountname + ".");
 
                 // if the tool is configured to create new VMs with empty data disks
@@ -1394,7 +1396,8 @@ namespace MIGAZ.Generator
             storageaccount_properties.accountType = resource.SelectSingleNode("//StorageServiceProperties/AccountType").InnerText;
 
             StorageAccount storageaccount = new StorageAccount();
-            storageaccount.name = resource.SelectSingleNode("//ServiceName").InnerText + app.Default.UniquenessSuffix;
+            //storageaccount.name = resource.SelectSingleNode("//ServiceName").InnerText + app.Default.UniquenessSuffix;
+            storageaccount.name = GetNewStorageAccountName( resource.SelectSingleNode("//ServiceName").InnerText );
             storageaccount.location = resource.SelectSingleNode("//ExtendedProperties/ExtendedProperty[Name='ResourceLocation']/Value").InnerText;
             storageaccount.properties = storageaccount_properties;
 
@@ -1449,6 +1452,30 @@ namespace MIGAZ.Generator
         {
             byte[] plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
             return System.Convert.ToBase64String(plainTextBytes);
+        }
+
+        private string GetNewStorageAccountName(string oldStorageAccountName)
+        {
+            string newStorageAccountName = "";
+
+            if (_storageAccountNames.ContainsKey(oldStorageAccountName))
+            {
+                _storageAccountNames.TryGetValue(oldStorageAccountName, out newStorageAccountName);
+            }
+            else
+            {
+                newStorageAccountName = oldStorageAccountName + app.Default.UniquenessSuffix;
+
+                if (newStorageAccountName.Length > 24)
+                {
+                    string randomString = Guid.NewGuid().ToString("N").Substring(0, 4);
+                    newStorageAccountName = newStorageAccountName.Substring(0, (24 - randomString.Length - app.Default.UniquenessSuffix.Length)) + randomString + app.Default.UniquenessSuffix;
+                }
+
+                _storageAccountNames.Add(oldStorageAccountName, newStorageAccountName);
+            }
+
+            return newStorageAccountName;
         }
 
         private string GetVMSize(string vmsize)
