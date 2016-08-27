@@ -388,6 +388,7 @@ namespace MIGAZ.Generator
                 else // if it's a load balancing rule
                 {
                     string name = inputendpoint.SelectSingleNode("LoadBalancedEndpointSetName").InnerText;
+                    name = name.Replace(" ", "");
                     XmlNode probenode = inputendpoint.SelectSingleNode("LoadBalancerProbe");
 
                     // build probe
