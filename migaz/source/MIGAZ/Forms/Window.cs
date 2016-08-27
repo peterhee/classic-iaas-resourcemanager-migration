@@ -185,6 +185,14 @@ namespace MIGAZ
         private void lvwVirtualMachines_ItemChecked(object sender, ItemCheckedEventArgs e)
         {
             UpdateExportItemsCount();
+
+            if (app.Default.AutoSelectDependencies)
+            {
+                if (e.Item.Checked)
+                {
+                    AutoSelectDependencies(e);
+                }
+            }
         }
 
         private void UpdateExportItemsCount()
@@ -295,6 +303,74 @@ namespace MIGAZ
             formoptions.ShowDialog(this);
         }
 
-  
+
+        private void AutoSelectDependencies (ItemCheckedEventArgs listViewRow)
+        {
+            string cloudServiceName = listViewRow.Item.ListView.Items[listViewRow.Item.Index].SubItems[0].Text;
+            string virtualMachineName = listViewRow.Item.ListView.Items[listViewRow.Item.Index].SubItems[1].Text;
+            string deploymentName = "";
+            string virtualNetworkName = "";
+            string loadBalancerName = "";
+
+            // Get Subscription from ComboBox
+            var token = GetToken(subscriptionsAndTenants[subscriptionid], PromptBehavior.Auto);
+            
+            // Get VM details
+            _asmRetriever.GetVMDetails(subscriptionid, cloudServiceName, virtualMachineName, token, out deploymentName, out virtualNetworkName, out loadBalancerName);
+
+            Hashtable virtualmachineinfo = new Hashtable();
+            virtualmachineinfo.Add("cloudservicename", cloudServiceName);
+            virtualmachineinfo.Add("deploymentname", deploymentName);
+            virtualmachineinfo.Add("virtualmachinename", virtualMachineName);
+            virtualmachineinfo.Add("virtualnetworkname", virtualNetworkName);
+            virtualmachineinfo.Add("loadbalancername", loadBalancerName);
+
+            XmlDocument virtualmachine = _asmRetriever.GetAzureASMResources("VirtualMachine", subscriptionid, virtualmachineinfo, token);
+
+            // process virtual network
+            foreach (ListViewItem virtualNetwork in lvwVirtualNetworks.Items)
+            {
+                if (virtualNetwork.Text == virtualNetworkName)
+                {
+                    lvwVirtualNetworks.Items[virtualNetwork.Index].Checked = true;
+                    lvwVirtualNetworks.Items[virtualNetwork.Index].Selected = true;
+                }
+            }
+
+            // process OS disk
+            XmlNode osvirtualharddisk = virtualmachine.SelectSingleNode("//OSVirtualHardDisk");
+            string olddiskurl = osvirtualharddisk.SelectSingleNode("MediaLink").InnerText;
+            string[] splitarray = olddiskurl.Split(new char[] { '/' });
+            string storageaccountname = splitarray[2].Split(new char[] { '.' })[0];
+
+            foreach (ListViewItem storageAccount in lvwStorageAccounts.Items)
+            {
+                if (storageAccount.Text == storageaccountname)
+                {
+                    lvwStorageAccounts.Items[storageAccount.Index].Checked = true;
+                    lvwStorageAccounts.Items[storageAccount.Index].Selected = true;
+                }
+            }
+
+            // process data disks
+            XmlNodeList datadisknodes = virtualmachine.SelectNodes("//DataVirtualHardDisks/DataVirtualHardDisk");
+            foreach (XmlNode datadisknode in datadisknodes)
+            {
+                olddiskurl = datadisknode.SelectSingleNode("MediaLink").InnerText;
+                splitarray = olddiskurl.Split(new char[] { '/' });
+                storageaccountname = splitarray[2].Split(new char[] { '.' })[0];
+
+                foreach (ListViewItem storageAccount in lvwStorageAccounts.Items)
+                {
+                    if (storageAccount.Text == storageaccountname)
+                    {
+                        lvwStorageAccounts.Items[storageAccount.Index].Checked = true;
+                        lvwStorageAccounts.Items[storageAccount.Index].Selected = true;
+                    }
+                }
+            }
+
+            lblStatus.Text = "Ready";
+        }
     }
 }

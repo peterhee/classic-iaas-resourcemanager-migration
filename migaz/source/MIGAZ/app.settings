@@ -29,5 +29,8 @@
     <Setting Name="AzureEnvironment" Type="System.String" Scope="User">
       <Value Profile="(Default)">Azure Cloud</Value>
     </Setting>
+    <Setting Name="AutoSelectDependencies" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
