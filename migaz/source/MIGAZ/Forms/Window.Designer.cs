@@ -277,6 +277,7 @@
             this.Name = "Window";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "migAz";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Window_FormClosing);
             this.Load += new System.EventHandler(this.Window_Load);
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();

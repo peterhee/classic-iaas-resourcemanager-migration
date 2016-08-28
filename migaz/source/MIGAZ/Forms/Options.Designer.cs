@@ -38,6 +38,7 @@
             this.label1 = new System.Windows.Forms.Label();
             this.cboAzureEnvironment = new System.Windows.Forms.ComboBox();
             this.chkAutoSelectDependencies = new System.Windows.Forms.CheckBox();
+            this.chkSaveSelection = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // lblSuffix
@@ -66,7 +67,7 @@
             this.chkAllowTelemetry.AutoSize = true;
             this.chkAllowTelemetry.Checked = true;
             this.chkAllowTelemetry.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.chkAllowTelemetry.Location = new System.Drawing.Point(37, 196);
+            this.chkAllowTelemetry.Location = new System.Drawing.Point(37, 230);
             this.chkAllowTelemetry.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.chkAllowTelemetry.Name = "chkAllowTelemetry";
             this.chkAllowTelemetry.Size = new System.Drawing.Size(211, 24);
@@ -78,7 +79,7 @@
             // btnOK
             // 
             this.btnOK.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.btnOK.Location = new System.Drawing.Point(200, 248);
+            this.btnOK.Location = new System.Drawing.Point(200, 282);
             this.btnOK.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.btnOK.Name = "btnOK";
             this.btnOK.Size = new System.Drawing.Size(112, 35);
@@ -103,7 +104,7 @@
             // btnCancel
             // 
             this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnCancel.Location = new System.Drawing.Point(331, 248);
+            this.btnCancel.Location = new System.Drawing.Point(331, 282);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(112, 35);
             this.btnCancel.TabIndex = 7;
@@ -144,13 +145,25 @@
             this.chkAutoSelectDependencies.Text = "Auto select dependencies (for VMs only)";
             this.chkAutoSelectDependencies.UseVisualStyleBackColor = true;
             // 
+            // chkSaveSelection
+            // 
+            this.chkSaveSelection.AutoSize = true;
+            this.chkSaveSelection.Location = new System.Drawing.Point(37, 196);
+            this.chkSaveSelection.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.chkSaveSelection.Name = "chkSaveSelection";
+            this.chkSaveSelection.Size = new System.Drawing.Size(138, 24);
+            this.chkSaveSelection.TabIndex = 9;
+            this.chkSaveSelection.Text = "Save selection";
+            this.chkSaveSelection.UseVisualStyleBackColor = true;
+            // 
             // formOptions
             // 
             this.AcceptButton = this.btnOK;
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.btnCancel;
-            this.ClientSize = new System.Drawing.Size(468, 307);
+            this.ClientSize = new System.Drawing.Size(468, 341);
+            this.Controls.Add(this.chkSaveSelection);
             this.Controls.Add(this.chkAutoSelectDependencies);
             this.Controls.Add(this.cboAzureEnvironment);
             this.Controls.Add(this.label1);
@@ -185,5 +198,6 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.ComboBox cboAzureEnvironment;
         private System.Windows.Forms.CheckBox chkAutoSelectDependencies;
+        private System.Windows.Forms.CheckBox chkSaveSelection;
     }
 }

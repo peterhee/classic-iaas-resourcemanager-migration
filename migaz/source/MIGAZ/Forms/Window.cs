@@ -18,6 +18,7 @@ namespace MIGAZ
         private Dictionary<string, string> subscriptionsAndTenants;
         private AsmRetriever _asmRetriever;
         private TemplateGenerator _templateGenerator;
+        private ISaveSelectionProvider _saveSelectionProvider;
         private ILogProvider _logProvider;
         private IStatusProvider _statusProvider;
 
@@ -27,6 +28,7 @@ namespace MIGAZ
             _logProvider = new FileLogProvider();
             _statusProvider = new UIStatusProvider(lblStatus);
             _asmRetriever = new AsmRetriever(_logProvider, _statusProvider);
+            _saveSelectionProvider = new UISaveSelectionProvider();
             var tokenProvider = new InteractiveTokenProvider();
             var telemetryProvider = new CloudTelemetryProvider();
             _templateGenerator = new TemplateGenerator(_logProvider, _statusProvider, telemetryProvider, tokenProvider, _asmRetriever);
@@ -38,6 +40,15 @@ namespace MIGAZ
 
             this.Text = "migAz (" + Assembly.GetEntryAssembly().GetName().Version.ToString() + ")";
             NewVersionAvailable(); // check if there a new version of the app
+        }
+
+        private void Window_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            // If save selection option is enabled
+            if (app.Default.SaveSelection)
+            {
+                _saveSelectionProvider.Save(Guid.Parse(subscriptionid), lvwVirtualNetworks, lvwStorageAccounts, lvwVirtualMachines);
+            }
         }
 
         private void btnGetToken_Click(object sender, EventArgs e)
@@ -163,7 +174,16 @@ namespace MIGAZ
                 }
 
                 lblStatus.Text = "BUSY: Getting Reserved IPs";
+                Application.DoEvents();
                 XmlDocument reservedips = _asmRetriever.GetAzureASMResources("ReservedIPs", subscriptionid, null, token);
+
+                // If save selection option is enabled
+                if (app.Default.SaveSelection)
+                {
+                    lblStatus.Text = "BUSY: Reading saved selection";
+                    Application.DoEvents();
+                    _saveSelectionProvider.Read(Guid.Parse(subscriptionid), ref lvwVirtualNetworks, ref lvwStorageAccounts, ref lvwVirtualMachines);
+                }
 
                 lblStatus.Text = "Ready";
 
@@ -250,6 +270,14 @@ namespace MIGAZ
             }
             else
             {
+                // If save selection option is enabled
+                if (app.Default.SaveSelection)
+                {
+                    lblStatus.Text = "BUSY: Reading saved selection";
+                    Application.DoEvents();
+                    _saveSelectionProvider.Save(Guid.Parse(subscriptionid), lvwVirtualNetworks, lvwStorageAccounts, lvwVirtualMachines);
+                }
+
                 var templateWriter = new StreamWriter(Path.Combine(txtDestinationFolder.Text, "export.json"));
                 var blobDetailWriter = new StreamWriter(Path.Combine(txtDestinationFolder.Text, "copyblobdetails.json"));
                 _templateGenerator.GenerateTemplate(subscriptionsAndTenants[subscriptionid], subscriptionid, artefacts, templateWriter, blobDetailWriter);
