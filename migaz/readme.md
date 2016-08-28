@@ -147,6 +147,14 @@ When exporting storage accounts and cloud services, the tool appends to the reso
 
 If this option is selected, the selected virtual machines will be exported to export.json file as new virtual machines with empty data disks. By default, Windows virtual machines will be created using Windows Server 2012 R2 Datacenter SKU and Linux virtual machine will be created using Ubuntu Server 16.04.0-LTS SKU. You can change this by editing the export.json template and change the image references.
 
+### Auto select dependencies
+
+If this option is selected, when you select a Virtual Machine, any dependent Virtual Network and Storage Accounts are selected automatically.
+
+### Save selection
+
+If this option is selected, migAz will record the last selected resources per each subscription. When you reopen the tool, the same resources will be automatically selected.
+
 ### Allow telemetry collection
 
 “Allow telemetry collection” is enabled by default. It is used to collect information such as Tenant ID, Subscription ID, Processed Resource Type, Processed Resource Location and the Execution date. This data is collected only to know the tool usage and it will remain only with the development team. You can disable this at any time.
@@ -190,6 +198,12 @@ In case of any issues during the deployment of the export.JSON you need to troub
 
 
 ## Release Notes
+
+### v1.4.5.0
+- Add Auto Select Dependencies option
+- Add Save Selection feature
+- Fix error when LoadBalancedEndpointSetName have spaces. Remove spaces
+- Correct behavior when new storage account name have more than 24 chars
 
 ### v1.4.4.0
 - Add requirement for Azure.Storage and AzureRM.Storage modules to be 2.0.1
