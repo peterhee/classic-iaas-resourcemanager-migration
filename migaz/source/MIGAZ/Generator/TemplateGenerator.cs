@@ -350,13 +350,21 @@ namespace MIGAZ.Generator
             loadbalancer_properties.probes = probes;
             loadbalancer.properties = loadbalancer_properties;
 
-            try // it fails if this load balancer was already processed. safe to continue.
+            // Add the load balancer only if there is any Load Balancing rule or Inbound NAT rule
+            if (inboundnatrules.Count > 0 || loadbalancingrules.Count > 0)
             {
-                _processedItems.Add("Microsoft.Network/loadBalancers/" + loadbalancer.name, loadbalancer.location);
-                _resources.Add(loadbalancer);
-                _logProvider.WriteLog("BuildLoadBalancerObject", "Microsoft.Network/loadBalancers/" + loadbalancer.name);
+                try // it fails if this load balancer was already processed. safe to continue.
+                {
+                    _processedItems.Add("Microsoft.Network/loadBalancers/" + loadbalancer.name, loadbalancer.location);
+                    _resources.Add(loadbalancer);
+                    _logProvider.WriteLog("BuildLoadBalancerObject", "Microsoft.Network/loadBalancers/" + loadbalancer.name);
+                }
+                catch { }
             }
-            catch { }
+            else
+            {
+                _logProvider.WriteLog("BuildLoadBalancerObject", "EMPTY Microsoft.Network/loadBalancers/" + loadbalancer.name);
+            }
 
             _logProvider.WriteLog("BuildLoadBalancerObject", "End");
         }
@@ -959,6 +967,12 @@ namespace MIGAZ.Generator
             //    privateIPAddress = virtualmachineinfo["ipaddress"].ToString();
             //}
 
+            List<string> dependson = new List<string>();
+            if (GetProcessedItem("Microsoft.Network/virtualNetworks/" + virtualnetworkname))
+            {
+                dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/virtualNetworks/" + virtualnetworkname + "')]");
+            }
+
             // Get the list of endpoints
             XmlNodeList inputendpoints = resource.SelectNodes("//ConfigurationSets/ConfigurationSet/InputEndpoints/InputEndpoint");
 
@@ -970,6 +984,8 @@ namespace MIGAZ.Generator
                 loadBalancerBackendAddressPool.id = "[concat(resourceGroup().id, '/providers/Microsoft.Network/loadBalancers/" + loadbalancername + "/backendAddressPools/default')]";
 
                 loadBalancerBackendAddressPools.Add(loadBalancerBackendAddressPool);
+
+                dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/loadBalancers/" + loadbalancername + "')]");
             }
 
             // Adds the references to the inboud nat rules
@@ -1014,13 +1030,6 @@ namespace MIGAZ.Generator
             {
                 networkinterface_properties.enableIPForwarding = true;
             }
-
-            List<string> dependson = new List<string>();
-            if (GetProcessedItem("Microsoft.Network/virtualNetworks/" + virtualnetworkname))
-            {
-                dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/virtualNetworks/" + virtualnetworkname + "')]");
-            }
-            dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/loadBalancers/" + loadbalancername + "')]");
 
             string networkinterface_name = virtualmachinename;
             NetworkInterface networkinterface = new NetworkInterface();
