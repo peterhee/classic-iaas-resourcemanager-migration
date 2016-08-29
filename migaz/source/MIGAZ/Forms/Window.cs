@@ -18,6 +18,7 @@ namespace MIGAZ
         private Dictionary<string, string> subscriptionsAndTenants;
         private AsmRetriever _asmRetriever;
         private TemplateGenerator _templateGenerator;
+        private ISaveSelectionProvider _saveSelectionProvider;
         private ILogProvider _logProvider;
         private IStatusProvider _statusProvider;
 
@@ -27,6 +28,7 @@ namespace MIGAZ
             _logProvider = new FileLogProvider();
             _statusProvider = new UIStatusProvider(lblStatus);
             _asmRetriever = new AsmRetriever(_logProvider, _statusProvider);
+            _saveSelectionProvider = new UISaveSelectionProvider();
             var tokenProvider = new InteractiveTokenProvider();
             var telemetryProvider = new CloudTelemetryProvider();
             _templateGenerator = new TemplateGenerator(_logProvider, _statusProvider, telemetryProvider, tokenProvider, _asmRetriever);
@@ -38,6 +40,15 @@ namespace MIGAZ
 
             this.Text = "migAz (" + Assembly.GetEntryAssembly().GetName().Version.ToString() + ")";
             NewVersionAvailable(); // check if there a new version of the app
+        }
+
+        private void Window_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            // If save selection option is enabled
+            if (app.Default.SaveSelection)
+            {
+                _saveSelectionProvider.Save(Guid.Parse(subscriptionid), lvwVirtualNetworks, lvwStorageAccounts, lvwVirtualMachines);
+            }
         }
 
         private void btnGetToken_Click(object sender, EventArgs e)
@@ -163,7 +174,16 @@ namespace MIGAZ
                 }
 
                 lblStatus.Text = "BUSY: Getting Reserved IPs";
+                Application.DoEvents();
                 XmlDocument reservedips = _asmRetriever.GetAzureASMResources("ReservedIPs", subscriptionid, null, token);
+
+                // If save selection option is enabled
+                if (app.Default.SaveSelection)
+                {
+                    lblStatus.Text = "BUSY: Reading saved selection";
+                    Application.DoEvents();
+                    _saveSelectionProvider.Read(Guid.Parse(subscriptionid), ref lvwVirtualNetworks, ref lvwStorageAccounts, ref lvwVirtualMachines);
+                }
 
                 lblStatus.Text = "Ready";
 
@@ -185,6 +205,14 @@ namespace MIGAZ
         private void lvwVirtualMachines_ItemChecked(object sender, ItemCheckedEventArgs e)
         {
             UpdateExportItemsCount();
+
+            if (app.Default.AutoSelectDependencies)
+            {
+                if (e.Item.Checked)
+                {
+                    AutoSelectDependencies(e);
+                }
+            }
         }
 
         private void UpdateExportItemsCount()
@@ -242,6 +270,14 @@ namespace MIGAZ
             }
             else
             {
+                // If save selection option is enabled
+                if (app.Default.SaveSelection)
+                {
+                    lblStatus.Text = "BUSY: Reading saved selection";
+                    Application.DoEvents();
+                    _saveSelectionProvider.Save(Guid.Parse(subscriptionid), lvwVirtualNetworks, lvwStorageAccounts, lvwVirtualMachines);
+                }
+
                 var templateWriter = new StreamWriter(Path.Combine(txtDestinationFolder.Text, "export.json"));
                 var blobDetailWriter = new StreamWriter(Path.Combine(txtDestinationFolder.Text, "copyblobdetails.json"));
                 _templateGenerator.GenerateTemplate(subscriptionsAndTenants[subscriptionid], subscriptionid, artefacts, templateWriter, blobDetailWriter);
@@ -295,6 +331,74 @@ namespace MIGAZ
             formoptions.ShowDialog(this);
         }
 
-  
+
+        private void AutoSelectDependencies (ItemCheckedEventArgs listViewRow)
+        {
+            string cloudServiceName = listViewRow.Item.ListView.Items[listViewRow.Item.Index].SubItems[0].Text;
+            string virtualMachineName = listViewRow.Item.ListView.Items[listViewRow.Item.Index].SubItems[1].Text;
+            string deploymentName = "";
+            string virtualNetworkName = "";
+            string loadBalancerName = "";
+
+            // Get Subscription from ComboBox
+            var token = GetToken(subscriptionsAndTenants[subscriptionid], PromptBehavior.Auto);
+            
+            // Get VM details
+            _asmRetriever.GetVMDetails(subscriptionid, cloudServiceName, virtualMachineName, token, out deploymentName, out virtualNetworkName, out loadBalancerName);
+
+            Hashtable virtualmachineinfo = new Hashtable();
+            virtualmachineinfo.Add("cloudservicename", cloudServiceName);
+            virtualmachineinfo.Add("deploymentname", deploymentName);
+            virtualmachineinfo.Add("virtualmachinename", virtualMachineName);
+            virtualmachineinfo.Add("virtualnetworkname", virtualNetworkName);
+            virtualmachineinfo.Add("loadbalancername", loadBalancerName);
+
+            XmlDocument virtualmachine = _asmRetriever.GetAzureASMResources("VirtualMachine", subscriptionid, virtualmachineinfo, token);
+
+            // process virtual network
+            foreach (ListViewItem virtualNetwork in lvwVirtualNetworks.Items)
+            {
+                if (virtualNetwork.Text == virtualNetworkName)
+                {
+                    lvwVirtualNetworks.Items[virtualNetwork.Index].Checked = true;
+                    lvwVirtualNetworks.Items[virtualNetwork.Index].Selected = true;
+                }
+            }
+
+            // process OS disk
+            XmlNode osvirtualharddisk = virtualmachine.SelectSingleNode("//OSVirtualHardDisk");
+            string olddiskurl = osvirtualharddisk.SelectSingleNode("MediaLink").InnerText;
+            string[] splitarray = olddiskurl.Split(new char[] { '/' });
+            string storageaccountname = splitarray[2].Split(new char[] { '.' })[0];
+
+            foreach (ListViewItem storageAccount in lvwStorageAccounts.Items)
+            {
+                if (storageAccount.Text == storageaccountname)
+                {
+                    lvwStorageAccounts.Items[storageAccount.Index].Checked = true;
+                    lvwStorageAccounts.Items[storageAccount.Index].Selected = true;
+                }
+            }
+
+            // process data disks
+            XmlNodeList datadisknodes = virtualmachine.SelectNodes("//DataVirtualHardDisks/DataVirtualHardDisk");
+            foreach (XmlNode datadisknode in datadisknodes)
+            {
+                olddiskurl = datadisknode.SelectSingleNode("MediaLink").InnerText;
+                splitarray = olddiskurl.Split(new char[] { '/' });
+                storageaccountname = splitarray[2].Split(new char[] { '.' })[0];
+
+                foreach (ListViewItem storageAccount in lvwStorageAccounts.Items)
+                {
+                    if (storageAccount.Text == storageaccountname)
+                    {
+                        lvwStorageAccounts.Items[storageAccount.Index].Checked = true;
+                        lvwStorageAccounts.Items[storageAccount.Index].Selected = true;
+                    }
+                }
+            }
+
+            lblStatus.Text = "Ready";
+        }
     }
 }

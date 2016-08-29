@@ -98,9 +98,11 @@
     <Compile Include="Generator\AsmRetriever.cs" />
     <Compile Include="Generator\CloudTelemetryProvider.cs" />
     <Compile Include="Generator\InteractiveTokenProvider.cs" />
+    <Compile Include="Generator\ISaveSelectionProvider.cs" />
     <Compile Include="Generator\ITelemetryProvider.cs" />
     <Compile Include="Generator\ITokenProvider.cs" />
     <Compile Include="Generator\ServiceUrls.cs" />
+    <Compile Include="Generator\UISaveSelectionProvider.cs" />
     <Compile Include="Models\CopyBlobDetail.cs" />
     <Compile Include="Models\ARM.cs" />
     <Compile Include="Forms\Options.cs">
@@ -122,6 +124,7 @@
     <Compile Include="Generator\IStatusProvider.cs" />
     <Compile Include="Generator\TemplateGenerator.cs" />
     <Compile Include="Generator\UIStatusProvider.cs" />
+    <Compile Include="Models\SaveSelection.cs" />
     <Compile Include="Models\TelemetryRecord.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
