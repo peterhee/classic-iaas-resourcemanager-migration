@@ -16,25 +16,28 @@ namespace MIGAZ.Generator
         private ITelemetryProvider _telemetryProvider;
         private ITokenProvider _tokenProvider;
         private AsmRetriever _asmRetriever;
+        private ISettingsProvider _settingsProvider;
         private List<Resource> _resources;
         private Dictionary<string, Parameter> _parameters;
         private List<CopyBlobDetail> _copyBlobDetails;
         private Dictionary<string, string> _processedItems;
         public Dictionary<string, string> _storageAccountNames;
 
-        public TemplateGenerator(ILogProvider logProvider, IStatusProvider statusProvider, ITelemetryProvider telemetryProvider, ITokenProvider tokenProvider, AsmRetriever asmRetriever)
+        public TemplateGenerator(ILogProvider logProvider, IStatusProvider statusProvider, ITelemetryProvider telemetryProvider, 
+            ITokenProvider tokenProvider, AsmRetriever asmRetriever, ISettingsProvider settingsProvider)
         {
             _logProvider = logProvider;
             _statusProvider = statusProvider;
             _telemetryProvider = telemetryProvider;
             _tokenProvider = tokenProvider;
             _asmRetriever = asmRetriever;
+            _settingsProvider = settingsProvider;
         }
         public void GenerateTemplate(string tenantId, string subscriptionId, AsmArtefacts artefacts, StreamWriter templateWriter, StreamWriter blobDetailWriter)
         {
             _logProvider.WriteLog("GenerateTemplate", "Start");
 
-            app.Default.ExecutionId = Guid.NewGuid().ToString();
+            _settingsProvider.ExecutionId = Guid.NewGuid().ToString();
             _resources = new List<Resource>();
             _parameters = new Dictionary<string, Parameter>();
 
@@ -143,7 +146,7 @@ namespace MIGAZ.Generator
             _logProvider.WriteLog("GenerateTemplate", "Write file copyblobdetails.json");
 
             // post Telemetry Record to ASMtoARMToolAPI
-            if (app.Default.AllowTelemetry)
+            if (_settingsProvider.AllowTelemetry)
             {
                 XmlDocument subscriptions = _asmRetriever.GetAzureASMResources("Subscriptions", subscriptionId, null, token);
                 string offercategories = "";
@@ -209,7 +212,7 @@ namespace MIGAZ.Generator
             }
 
             Hashtable dnssettings = new Hashtable();
-            dnssettings.Add("domainNameLabel", (publicipaddress_name + app.Default.UniquenessSuffix).ToLower());
+            dnssettings.Add("domainNameLabel", (publicipaddress_name + _settingsProvider.UniquenessSuffix).ToLower());
 
             PublicIPAddress_Properties publicipaddress_properties = new PublicIPAddress_Properties();
             publicipaddress_properties.dnsSettings = dnssettings;
@@ -1173,7 +1176,7 @@ namespace MIGAZ.Generator
             OsProfile osprofile = new OsProfile();
 
             // if the tool is configured to create new VMs with empty data disks
-            if (app.Default.BuildEmpty)
+            if (_settingsProvider.BuildEmpty)
             {
                 osdisk.createOption = "FromImage";
 
@@ -1265,7 +1268,7 @@ namespace MIGAZ.Generator
                 newdiskurl = olddiskurl.Replace(oldstorageaccountname + ".", newstorageaccountname + ".");
 
                 // if the tool is configured to create new VMs with empty data disks
-                if (app.Default.BuildEmpty)
+                if (_settingsProvider.BuildEmpty)
                 {
                     datadisk.createOption = "Empty";
                 }
@@ -1304,13 +1307,13 @@ namespace MIGAZ.Generator
             }
 
             StorageProfile storageprofile = new StorageProfile();
-            if (app.Default.BuildEmpty) { storageprofile.imageReference = imagereference; }
+            if (_settingsProvider.BuildEmpty) { storageprofile.imageReference = imagereference; }
             storageprofile.osDisk = osdisk;
             storageprofile.dataDisks = datadisks;
 
             VirtualMachine_Properties virtualmachine_properties = new VirtualMachine_Properties();
             virtualmachine_properties.hardwareProfile = hardwareprofile;
-            if (app.Default.BuildEmpty) { virtualmachine_properties.osProfile = osprofile; }
+            if (_settingsProvider.BuildEmpty) { virtualmachine_properties.osProfile = osprofile; }
             virtualmachine_properties.networkProfile = networkprofile;
             virtualmachine_properties.storageProfile = storageprofile;
 
@@ -1327,7 +1330,7 @@ namespace MIGAZ.Generator
             //    {
             //        string json = Base64Decode(resourceextensionreference.SelectSingleNode("ResourceExtensionParameterValues/ResourceExtensionParameterValue/Value").InnerText);
             //        var resourceextensionparametervalue = JsonConvert.DeserializeObject<dynamic>(json);
-            //        string diagnosticsstorageaccount = resourceextensionparametervalue.storageAccount.Value + app.Default.UniquenessSuffix;
+            //        string diagnosticsstorageaccount = resourceextensionparametervalue.storageAccount.Value + _settingsProvider.UniquenessSuffix;
             //        string xmlcfgvalue = Base64Decode(resourceextensionparametervalue.xmlCfg.Value);
             //        xmlcfgvalue = xmlcfgvalue.Replace("\n", "");
             //        xmlcfgvalue = xmlcfgvalue.Replace("\r", "");
@@ -1338,7 +1341,7 @@ namespace MIGAZ.Generator
             //        XmlNodeList mynodelist = xmlcfg.SelectNodes("/wadCfg/DiagnosticMonitorConfiguration/Metrics");
 
 
-                    
+
 
             //        extension_iaasdiagnostics = new Extension();
             //        extension_iaasdiagnostics.name = "Microsoft.Insights.VMDiagnosticsSettings";
@@ -1360,7 +1363,7 @@ namespace MIGAZ.Generator
             //        extension_iaasdiagnostics.properties = extension_iaasdiagnostics_properties;
             //    }
             //}
-            
+
             // Availability Set
             string availabilitysetname = virtualmachineinfo["cloudservicename"] + "-defaultAS";
             if (resource.SelectSingleNode("//AvailabilitySetName") != null)
@@ -1405,7 +1408,7 @@ namespace MIGAZ.Generator
             storageaccount_properties.accountType = resource.SelectSingleNode("//StorageServiceProperties/AccountType").InnerText;
 
             StorageAccount storageaccount = new StorageAccount();
-            //storageaccount.name = resource.SelectSingleNode("//ServiceName").InnerText + app.Default.UniquenessSuffix;
+            //storageaccount.name = resource.SelectSingleNode("//ServiceName").InnerText + _settingsProvider.UniquenessSuffix;
             storageaccount.name = GetNewStorageAccountName( resource.SelectSingleNode("//ServiceName").InnerText );
             storageaccount.location = resource.SelectSingleNode("//ExtendedProperties/ExtendedProperty[Name='ResourceLocation']/Value").InnerText;
             storageaccount.properties = storageaccount_properties;
@@ -1473,12 +1476,12 @@ namespace MIGAZ.Generator
             }
             else
             {
-                newStorageAccountName = oldStorageAccountName + app.Default.UniquenessSuffix;
+                newStorageAccountName = oldStorageAccountName + _settingsProvider.UniquenessSuffix;
 
                 if (newStorageAccountName.Length > 24)
                 {
                     string randomString = Guid.NewGuid().ToString("N").Substring(0, 4);
-                    newStorageAccountName = newStorageAccountName.Substring(0, (24 - randomString.Length - app.Default.UniquenessSuffix.Length)) + randomString + app.Default.UniquenessSuffix;
+                    newStorageAccountName = newStorageAccountName.Substring(0, (24 - randomString.Length - _settingsProvider.UniquenessSuffix.Length)) + randomString + _settingsProvider.UniquenessSuffix;
                 }
 
                 _storageAccountNames.Add(oldStorageAccountName, newStorageAccountName);

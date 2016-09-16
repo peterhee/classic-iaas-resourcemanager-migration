@@ -13,5 +13,10 @@ namespace MIGAZ.Tests.Fakes
         {
             
         }
+
+        public void PostTelemetryRecord(string tenantId, string subscriptionId, Dictionary<string, string> processedItems, string offercategories)
+        {
+            
+        }
     }
 }

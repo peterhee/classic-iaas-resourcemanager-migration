@@ -95,10 +95,12 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>app.settings</DependentUpon>
     </Compile>
+    <Compile Include="Generator\AppSettingsProvider.cs" />
     <Compile Include="Generator\AsmRetriever.cs" />
     <Compile Include="Generator\CloudTelemetryProvider.cs" />
     <Compile Include="Generator\InteractiveTokenProvider.cs" />
     <Compile Include="Generator\ISaveSelectionProvider.cs" />
+    <Compile Include="Generator\ISettingsProvider.cs" />
     <Compile Include="Generator\ITelemetryProvider.cs" />
     <Compile Include="Generator\ITokenProvider.cs" />
     <Compile Include="Generator\ServiceUrls.cs" />

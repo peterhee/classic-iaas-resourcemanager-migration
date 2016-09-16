@@ -31,7 +31,8 @@ namespace MIGAZ
             _saveSelectionProvider = new UISaveSelectionProvider();
             var tokenProvider = new InteractiveTokenProvider();
             var telemetryProvider = new CloudTelemetryProvider();
-            _templateGenerator = new TemplateGenerator(_logProvider, _statusProvider, telemetryProvider, tokenProvider, _asmRetriever);
+            var settingsProvider = new AppSettingsProvider();
+            _templateGenerator = new TemplateGenerator(_logProvider, _statusProvider, telemetryProvider, tokenProvider, _asmRetriever, settingsProvider);
         }
 
         private void Window_Load(object sender, EventArgs e)
