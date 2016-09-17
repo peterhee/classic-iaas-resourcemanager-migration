@@ -1,23 +1,22 @@
 ﻿<VirtualNetworkSites xmlns="http://schemas.microsoft.com/windowsazure" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
   <VirtualNetworkSite>
-    <Name>vnet1</Name>
+    <Name>vnet3</Name>
     <Id>e39812c6-673c-463b-8f1a-bf7988b5664c</Id>
     <State>Created</State>
     <InUse>true</InUse>
     <AddressSpace>
       <AddressPrefixes>
-        <AddressPrefix>10.5.32.0/22</AddressPrefix>
+        <AddressPrefix>10.5.0.0/22</AddressPrefix>
       </AddressPrefixes>
     </AddressSpace>
     <Subnets>
       <Subnet>
         <Name>snapps01</Name>
-        <AddressPrefix>10.5.32.0/24</AddressPrefix>
-        <RouteTableName>rtapps01</RouteTableName>
+        <AddressPrefix>10.5.0.0/24</AddressPrefix>
       </Subnet>
       <Subnet>
         <Name>GatewaySubnet</Name>
-        <AddressPrefix>10.5.19.224/27</AddressPrefix>
+        <AddressPrefix>10.5.3.224/27</AddressPrefix>
       </Subnet>
     </Subnets>
     <Dns>
@@ -36,7 +35,7 @@
       <Profile>Small</Profile>
       <Sites>
         <LocalNetworkSite>
-          <Name>prod-sy-er-ln</Name>
+          <Name>localsite</Name>
           <AddressSpace>
             <AddressPrefixes>
               <AddressPrefix>192.0.2.244/30</AddressPrefix>

@@ -618,7 +618,13 @@ namespace MIGAZ.Generator
             _resources.Add(virtualnetwork);
             _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/virtualNetworks/" + virtualnetwork.name);
 
+            AddGatewaysToVirtualNetwork(subscriptionId, resource, token, virtualnetwork);
 
+            _logProvider.WriteLog("BuildVirtualNetworkObject", "End");
+        }
+
+        private void AddGatewaysToVirtualNetwork(string subscriptionId, XmlNode resource, string token, VirtualNetwork virtualnetwork)
+        {
             // Process Virtual Network Gateway if one exists
             if (resource.SelectNodes("Gateway").Count > 0)
             {
@@ -641,7 +647,7 @@ namespace MIGAZ.Generator
                 Reference publicipaddress_ref = new Reference();
                 publicipaddress_ref.id = "[concat(resourceGroup().id, '/providers/Microsoft.Network/publicIPAddresses/" + publicipaddress.name + "')]";
 
-                dependson = new List<string>();
+                var dependson = new List<string>();
                 dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/virtualNetworks/" + virtualnetwork.name + "')]");
                 dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/publicIPAddresses/" + publicipaddress.name + "')]");
 
@@ -664,12 +670,12 @@ namespace MIGAZ.Generator
                 VirtualNetworkGateway_Properties virtualnetworkgateway_properties = new VirtualNetworkGateway_Properties();
                 virtualnetworkgateway_properties.ipConfigurations = virtualnetworkgateway_ipconfigurations;
                 virtualnetworkgateway_properties.sku = virtualnetworkgateway_sku;
-                virtualnetworkgateway_properties.gatewayType = "Vpn";
 
+                
                 // If there is VPN Client configuration
                 if (resource.SelectNodes("Gateway/VPNClientAddressPool/AddressPrefixes/AddressPrefix").Count > 0)
                 {
-                    addressprefixes = new List<string>();
+                    var addressprefixes = new List<string>();
                     addressprefixes.Add(resource.SelectNodes("Gateway/VPNClientAddressPool/AddressPrefixes/AddressPrefix")[0].InnerText);
 
                     AddressSpace vpnclientaddresspool = new AddressSpace();
@@ -709,34 +715,56 @@ namespace MIGAZ.Generator
                 Hashtable virtualnetworkgatewayinfo = new Hashtable();
                 virtualnetworkgatewayinfo.Add("virtualnetworkname", resource.SelectSingleNode("Name").InnerText);
                 virtualnetworkgatewayinfo.Add("localnetworksitename", "");
-                XmlDocument gateway = _asmRetriever.GetAzureASMResources("VirtualNetworkGateway", subscriptionId, virtualnetworkgatewayinfo, token);
 
-                string vpnType = gateway.SelectSingleNode("//GatewayType").InnerText;
-                if (vpnType == "StaticRouting")
+                var connectionTypeNodes = resource.SelectNodes("Gateway/Sites/LocalNetworkSite/Connections/Connection/Type");
+                if (connectionTypeNodes.Count > 0 && connectionTypeNodes[0].InnerText == "Dedicated")
                 {
-                    vpnType = "PolicyBased";
+                    virtualnetworkgateway_properties.gatewayType = "ExpressRoute";
+                    virtualnetworkgateway_properties.enableBgp = null;
+                    virtualnetworkgateway_properties.vpnType = null;
                 }
-                else if (vpnType == "DynamicRouting")
+                else
                 {
-                    vpnType = "RouteBased";
+                    virtualnetworkgateway_properties.gatewayType = "Vpn";
+                    XmlDocument gateway = _asmRetriever.GetAzureASMResources("VirtualNetworkGateway", subscriptionId, virtualnetworkgatewayinfo, token);
+                    string vpnType = gateway.SelectSingleNode("//GatewayType").InnerText;
+                    if (vpnType == "StaticRouting")
+                    {
+                        vpnType = "PolicyBased";
+                    }
+                    else if (vpnType == "DynamicRouting")
+                    {
+                        vpnType = "RouteBased";
+                    }
+                    virtualnetworkgateway_properties.vpnType = vpnType;
                 }
-                virtualnetworkgateway_properties.vpnType = vpnType;
 
                 VirtualNetworkGateway virtualnetworkgateway = new VirtualNetworkGateway();
                 virtualnetworkgateway.location = virtualnetwork.location;
-                virtualnetworkgateway.name = virtualnetwork.name + "-VPNGateway";
+                virtualnetworkgateway.name = virtualnetwork.name + "-Gateway";
                 virtualnetworkgateway.properties = virtualnetworkgateway_properties;
                 virtualnetworkgateway.dependsOn = dependson;
 
                 _processedItems.Add("Microsoft.Network/virtualNetworkGateways/" + virtualnetworkgateway.name, virtualnetworkgateway.location);
                 _resources.Add(virtualnetworkgateway);
                 _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/virtualNetworkGateways/" + virtualnetworkgateway.name);
+                AddLocalSiteToGateway(subscriptionId, resource, token, virtualnetwork, virtualnetworkgatewayinfo, virtualnetworkgateway);
+            }
+        }
 
-                // Local Network Gateways & Connections
-                foreach (XmlNode LocalNetworkSite in resource.SelectNodes("Gateway/Sites/LocalNetworkSite"))
+        private void AddLocalSiteToGateway(string subscriptionId, XmlNode resource, string token, VirtualNetwork virtualnetwork, Hashtable virtualnetworkgatewayinfo, VirtualNetworkGateway virtualnetworkgateway)
+        {
+            // Local Network Gateways & Connections
+            foreach (XmlNode LocalNetworkSite in resource.SelectNodes("Gateway/Sites/LocalNetworkSite"))
+            {
+                GatewayConnection_Properties gatewayconnection_properties = new GatewayConnection_Properties();
+                var dependson = new List<string>();
+
+                string connectionType = LocalNetworkSite.SelectSingleNode("Connections/Connection/Type").InnerText;
+                if (connectionType == "IPsec")
                 {
                     // Local Network Gateway
-                    addressprefixes = new List<string>();
+                    var addressprefixes = new List<string>();
                     foreach (XmlNode addressprefix in LocalNetworkSite.SelectNodes("AddressSpace/AddressPrefixes"))
                     {
                         addressprefixes.Add(addressprefix.SelectSingleNode("AddressPrefix").InnerText);
@@ -764,50 +792,50 @@ namespace MIGAZ.Generator
                     catch { }
                     _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/localNetworkGateways/" + localnetworkgateway.name);
 
-                    // Connections
-                    Reference virtualnetworkgateway_ref = new Reference();
-                    virtualnetworkgateway_ref.id = "[concat(resourceGroup().id, '/providers/Microsoft.Network/virtualNetworkGateways/" + virtualnetworkgateway.name + "')]";
-
                     Reference localnetworkgateway_ref = new Reference();
                     localnetworkgateway_ref.id = "[concat(resourceGroup().id, '/providers/Microsoft.Network/localNetworkGateways/" + localnetworkgateway.name + "')]";
-
-                    dependson = new List<string>();
-                    dependson.Add(virtualnetworkgateway_ref.id);
                     dependson.Add(localnetworkgateway_ref.id);
 
-                    GatewayConnection_Properties gatewayconnection_properties = new GatewayConnection_Properties();
-                    gatewayconnection_properties.connectionType = LocalNetworkSite.SelectSingleNode("Connections/Connection/Type").InnerText;
-                    gatewayconnection_properties.virtualNetworkGateway1 = virtualnetworkgateway_ref;
+                    gatewayconnection_properties.connectionType = connectionType;
                     gatewayconnection_properties.localNetworkGateway2 = localnetworkgateway_ref;
 
                     virtualnetworkgatewayinfo["localnetworksitename"] = LocalNetworkSite.SelectSingleNode("Name").InnerText;
                     XmlDocument connectionsharekey = _asmRetriever.GetAzureASMResources("VirtualNetworkGatewaySharedKey", subscriptionId, virtualnetworkgatewayinfo, token);
-
-                    if (!(connectionsharekey == null))
+                    if (connectionsharekey == null)
                     {
-                        gatewayconnection_properties.sharedKey = connectionsharekey.SelectSingleNode("//Value").InnerText;
-
-                        GatewayConnection gatewayconnection = new GatewayConnection();
-                        gatewayconnection.name = virtualnetworkgateway.name + "-" + localnetworkgateway.name + "-connection";
-                        gatewayconnection.location = virtualnetwork.location;
-                        gatewayconnection.properties = gatewayconnection_properties;
-                        gatewayconnection.dependsOn = dependson;
-
-                        _processedItems.Add("Microsoft.Network/connections/" + gatewayconnection.name, gatewayconnection.location);
-                        _resources.Add(gatewayconnection);
-                        _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/connections/" + gatewayconnection.name);
+                        gatewayconnection_properties.sharedKey = "**SHARED KEY GOES HERE**";
                     }
                     else
                     {
-                        _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/connections/" + " NO SHARED KEY DEFINED");
+                        gatewayconnection_properties.sharedKey = connectionsharekey.SelectSingleNode("//Value").InnerText;
                     }
                 }
+                else if (connectionType == "Dedicated")
+                {
+                    gatewayconnection_properties.connectionType = "ExpressRoute";
+                    gatewayconnection_properties.peer = "**EXPRESSROUTE CIRCUIT NAME GOES HERE**";
+                }
+
+                // Connections
+                Reference virtualnetworkgateway_ref = new Reference();
+                virtualnetworkgateway_ref.id = "[concat(resourceGroup().id, '/providers/Microsoft.Network/virtualNetworkGateways/" + virtualnetworkgateway.name + "')]";
+                     
+                dependson.Add(virtualnetworkgateway_ref.id);
+
+                gatewayconnection_properties.virtualNetworkGateway1 = virtualnetworkgateway_ref;
+
+                GatewayConnection gatewayconnection = new GatewayConnection();
+                gatewayconnection.name = virtualnetworkgateway.name + "-" + LocalNetworkSite.SelectSingleNode("Name").InnerText + "-connection";
+                gatewayconnection.location = virtualnetwork.location;
+                gatewayconnection.properties = gatewayconnection_properties;
+                gatewayconnection.dependsOn = dependson;
+
+                _processedItems.Add("Microsoft.Network/connections/" + gatewayconnection.name, gatewayconnection.location);
+                _resources.Add(gatewayconnection);
+                _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/connections/" + gatewayconnection.name);
+
             }
-
-            _logProvider.WriteLog("BuildVirtualNetworkObject", "End");
         }
-
-
 
         private NetworkSecurityGroup BuildNetworkSecurityGroup(string subscriptionId, string networksecuritygroupname, string token)
         {
