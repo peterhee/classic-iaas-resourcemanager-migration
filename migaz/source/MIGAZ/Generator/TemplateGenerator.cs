@@ -22,6 +22,7 @@ namespace MIGAZ.Generator
         private List<CopyBlobDetail> _copyBlobDetails;
         private Dictionary<string, string> _processedItems;
         public Dictionary<string, string> _storageAccountNames;
+        private List<string> _messages;
 
         public TemplateGenerator(ILogProvider logProvider, IStatusProvider statusProvider, ITelemetryProvider telemetryProvider, 
             ITokenProvider tokenProvider, AsmRetriever asmRetriever, ISettingsProvider settingsProvider)
@@ -33,14 +34,14 @@ namespace MIGAZ.Generator
             _asmRetriever = asmRetriever;
             _settingsProvider = settingsProvider;
         }
-        public void GenerateTemplate(string tenantId, string subscriptionId, AsmArtefacts artefacts, StreamWriter templateWriter, StreamWriter blobDetailWriter)
+        public List<string> GenerateTemplate(string tenantId, string subscriptionId, AsmArtefacts artefacts, StreamWriter templateWriter, StreamWriter blobDetailWriter)
         {
             _logProvider.WriteLog("GenerateTemplate", "Start");
 
             _settingsProvider.ExecutionId = Guid.NewGuid().ToString();
             _resources = new List<Resource>();
             _parameters = new Dictionary<string, Parameter>();
-
+            _messages = new List<string>();
             _processedItems = new Dictionary<string, string>();
             _copyBlobDetails = new List<CopyBlobDetail>();
             _storageAccountNames = new Dictionary<string, string>();
@@ -165,6 +166,7 @@ namespace MIGAZ.Generator
             _statusProvider.UpdateStatus("Ready");
 
             _logProvider.WriteLog("GenerateTemplate", "End");
+            return _messages;
         }
 
         private void BuildPublicIPAddressObject(ref NetworkInterface networkinterface)
@@ -803,7 +805,8 @@ namespace MIGAZ.Generator
                     XmlDocument connectionsharekey = _asmRetriever.GetAzureASMResources("VirtualNetworkGatewaySharedKey", subscriptionId, virtualnetworkgatewayinfo, token);
                     if (connectionsharekey == null)
                     {
-                        gatewayconnection_properties.sharedKey = "**SHARED KEY GOES HERE**";
+                        gatewayconnection_properties.sharedKey = "***SHARED KEY GOES HERE***";
+                        _messages.Add($"Unable to retrieve shared key for VPN connection {virtualnetworkgateway.name}. Please edit the template to provide this value.");
                     }
                     else
                     {
@@ -813,7 +816,8 @@ namespace MIGAZ.Generator
                 else if (connectionType == "Dedicated")
                 {
                     gatewayconnection_properties.connectionType = "ExpressRoute";
-                    gatewayconnection_properties.peer = "**EXPRESSROUTE CIRCUIT NAME GOES HERE**";
+                    gatewayconnection_properties.peer = new Reference() { id = "/subscriptions/***/resourceGroups/***/providers/Microsoft.Network/expressRouteCircuits/***" };
+                    _messages.Add($"Gateway {virtualnetworkgateway.name} connects to ExpressRoute. MigAz is unable to migrate ExpressRoute circuits. Please create or convert the circuit yourself and update the circuit resource ID in the generated template.");
                 }
 
                 // Connections

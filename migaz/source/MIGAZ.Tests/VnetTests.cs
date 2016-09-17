@@ -162,7 +162,7 @@ namespace MIGAZ.Tests
             Assert.AreEqual(1, conn.Count());
             Assert.AreEqual("vnet3-Gateway-localsite-connection", conn.First()["name"].Value<string>());
             Assert.AreEqual("ExpressRoute", conn.First()["properties"]["connectionType"].Value<string>());
-            Assert.IsNotNull(conn.First()["properties"]["peer"].Value<string>());
+            Assert.IsNotNull(conn.First()["properties"]["peer"]["id"].Value<string>());
         }
     }
 }
