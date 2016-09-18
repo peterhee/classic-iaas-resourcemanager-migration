@@ -59,7 +59,7 @@ namespace MIGAZ.Tests
             var pips = templateJson["resources"].Children().Where(
                 r => r["type"].Value<string>() == "Microsoft.Network/publicIPAddresses");
             Assert.AreEqual(1, pips.Count());
-            Assert.AreEqual("10.2.0.0-VPNGateway-PIP", pips.First()["name"].Value<string>());
+            Assert.AreEqual("10.2.0.0-Gateway-PIP", pips.First()["name"].Value<string>());
             Assert.AreEqual("Dynamic", pips.First()["properties"]["publicIPAllocationMethod"].Value<string>());
         }
 
@@ -130,7 +130,7 @@ namespace MIGAZ.Tests
             var artefacts = new AsmArtefacts();
             artefacts.VirtualNetworks.Add("vnet3");
 
-            templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
+            var messages = templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
 
             JObject templateJson = TestHelper.GetJsonData(templateStream);
 
@@ -163,6 +163,10 @@ namespace MIGAZ.Tests
             Assert.AreEqual("vnet3-Gateway-localsite-connection", conn.First()["name"].Value<string>());
             Assert.AreEqual("ExpressRoute", conn.First()["properties"]["connectionType"].Value<string>());
             Assert.IsNotNull(conn.First()["properties"]["peer"]["id"].Value<string>());
+
+            // Validate message
+            Assert.AreEqual(1, messages.Count);
+            StringAssert.Contains(messages[0], "ExpressRoute");
         }
     }
 }

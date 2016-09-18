@@ -635,7 +635,7 @@ namespace MIGAZ.Generator
                 publicipaddress_properties.publicIPAllocationMethod = "Dynamic";
 
                 PublicIPAddress publicipaddress = new PublicIPAddress();
-                publicipaddress.name = virtualnetwork.name + "-VPNGateway-PIP";
+                publicipaddress.name = virtualnetwork.name + "-Gateway-PIP";
                 publicipaddress.location = virtualnetwork.location;
                 publicipaddress.properties = publicipaddress_properties;
 
@@ -659,7 +659,7 @@ namespace MIGAZ.Generator
                 ipconfiguration_properties.publicIPAddress = publicipaddress_ref;
 
                 IpConfiguration virtualnetworkgateway_ipconfiguration = new IpConfiguration();
-                virtualnetworkgateway_ipconfiguration.name = "VPNGatewayIPConfig";
+                virtualnetworkgateway_ipconfiguration.name = "GatewayIPConfig";
                 virtualnetworkgateway_ipconfiguration.properties = ipconfiguration_properties;
 
                 VirtualNetworkGateway_Sku virtualnetworkgateway_sku = new VirtualNetworkGateway_Sku();
