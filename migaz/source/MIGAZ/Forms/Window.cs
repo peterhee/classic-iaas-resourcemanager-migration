@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using MIGAZ.Models;
 using MIGAZ.Generator;
+using MIGAZ.Forms;
 
 namespace MIGAZ
 {
@@ -279,18 +280,17 @@ namespace MIGAZ
                     _saveSelectionProvider.Save(Guid.Parse(subscriptionid), lvwVirtualNetworks, lvwStorageAccounts, lvwVirtualMachines);
                 }
 
-                var templateWriter = new StreamWriter(Path.Combine(txtDestinationFolder.Text, "export.json"));
-                var blobDetailWriter = new StreamWriter(Path.Combine(txtDestinationFolder.Text, "copyblobdetails.json"));
+                var instructionsPath = Path.Combine(txtDestinationFolder.Text, "DeployInstructions.html");
+                var templatePath = Path.Combine(txtDestinationFolder.Text, "export.json");
+                var blobDetailsPath = Path.Combine(txtDestinationFolder.Text, "copyblobdetails.json");
+                var templateWriter = new StreamWriter(templatePath);
+                var blobDetailWriter = new StreamWriter(blobDetailsPath);
                 try
                 {
                     var messages = _templateGenerator.GenerateTemplate(subscriptionsAndTenants[subscriptionid], subscriptionid, artefacts, templateWriter, blobDetailWriter);
-                    string messageInfo = String.Empty;
-                    if (messages.Count > 0)
-                    {
-                        messageInfo += "\r\n\r\nThe following messages were provided:";
-                        messages.ForEach(m => messageInfo += "\r\n" + m);
-                    }
-                    MessageBox.Show("Template has been generated successfully." + messageInfo, this.Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    var token = GetToken(subscriptionsAndTenants[subscriptionid], PromptBehavior.Auto);
+                    var exportResults = new ExportResults(_asmRetriever, token, messages, subscriptionid, instructionsPath, templatePath, blobDetailsPath);
+                    exportResults.ShowDialog(this);
                 }
                 catch (Exception ex)
                 {
