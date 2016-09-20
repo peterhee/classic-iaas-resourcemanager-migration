@@ -82,9 +82,16 @@ namespace MIGAZ.Forms
 
         private void btnGenerateInstructions_Click(object sender, EventArgs e)
         {
-            string instructionsTemplatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DeployDocTemplate.html");
-            var reader = new StreamReader(instructionsTemplatePath);
-            var content = reader.ReadToEnd();
+            var assembly = Assembly.GetExecutingAssembly();
+            var resourceName = "MIGAZ.DeployDocTemplate.html";
+            string content;
+
+            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+            using (StreamReader reader = new StreamReader(stream))
+            {
+                content = reader.ReadToEnd();
+            }
+
             content = content.Replace("{subscriptionId}", ((Subscription)cboSubscription.SelectedItem).SubscriptionId);
             content = content.Replace("{templatePath}", _templatePath);
             content = content.Replace("{blobDetailsPath}", _blobDetailsPath);

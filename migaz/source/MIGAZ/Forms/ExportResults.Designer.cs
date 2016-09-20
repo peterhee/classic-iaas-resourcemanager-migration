@@ -157,7 +157,7 @@
             this.btnGenerateInstructions.Location = new System.Drawing.Point(197, 218);
             this.btnGenerateInstructions.Name = "btnGenerateInstructions";
             this.btnGenerateInstructions.Size = new System.Drawing.Size(200, 47);
-            this.btnGenerateInstructions.TabIndex = 5;
+            this.btnGenerateInstructions.TabIndex = 7;
             this.btnGenerateInstructions.Text = "Show Instructions";
             this.btnGenerateInstructions.UseVisualStyleBackColor = true;
             this.btnGenerateInstructions.Click += new System.EventHandler(this.btnGenerateInstructions_Click);
@@ -176,7 +176,7 @@
             this.label6.Location = new System.Drawing.Point(20, 156);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(74, 20);
-            this.label6.TabIndex = 3;
+            this.label6.TabIndex = 5;
             this.label6.Text = "Location:";
             // 
             // label5
@@ -219,7 +219,7 @@
             this.cboRGLocation.Location = new System.Drawing.Point(197, 153);
             this.cboRGLocation.Name = "cboRGLocation";
             this.cboRGLocation.Size = new System.Drawing.Size(293, 28);
-            this.cboRGLocation.TabIndex = 2;
+            this.cboRGLocation.TabIndex = 6;
             // 
             // cboSubscription
             // 
@@ -271,6 +271,7 @@
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "ExportResults";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Export Complete";
             this.Load += new System.EventHandler(this.ExportResults_Load);
             this.tabControl1.ResumeLayout(false);
