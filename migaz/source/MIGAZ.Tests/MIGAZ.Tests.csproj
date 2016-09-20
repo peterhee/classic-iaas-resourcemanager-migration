@@ -59,6 +59,7 @@
   <ItemGroup>
     <Compile Include="Fakes\FakeAsmRetriever.cs" />
     <Compile Include="Fakes\FakeLogProvider.cs" />
+    <Compile Include="Fakes\FakeSettingsProvider.cs" />
     <Compile Include="Fakes\FakeStatusProvider.cs" />
     <Compile Include="Fakes\FakeTelemetryProvider.cs" />
     <Compile Include="Fakes\FakeTokenProvider.cs" />
@@ -68,12 +69,18 @@
     <Content Include="TestDocs\Storage1\StorageAccount-mystorage.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="TestDocs\VM1\ReservedIPs.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="TestDocs\VM1\StorageAccountKeys-myservice.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Compile Include="TestHelper.cs" />
     <Compile Include="VirtualMachineTests.cs" />
     <Content Include="TestDocs\VM2\CloudService-myasmvm.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDocs\VM2\ReservedIPs.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="TestDocs\VM2\StorageAccountKeys-mystorage.xml">
@@ -114,6 +121,13 @@
     </Content>
     <Content Include="TestDocs\VNET2\VirtualNetworks.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDocs\VNET3\VirtualNetworkGateway-vnet3.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDocs\VNET3\VirtualNetworks.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
     </Content>
   </ItemGroup>
   <ItemGroup>

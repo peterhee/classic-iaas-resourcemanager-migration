@@ -16,28 +16,32 @@ namespace MIGAZ.Generator
         private ITelemetryProvider _telemetryProvider;
         private ITokenProvider _tokenProvider;
         private AsmRetriever _asmRetriever;
+        private ISettingsProvider _settingsProvider;
         private List<Resource> _resources;
         private Dictionary<string, Parameter> _parameters;
         private List<CopyBlobDetail> _copyBlobDetails;
         private Dictionary<string, string> _processedItems;
         public Dictionary<string, string> _storageAccountNames;
+        private List<string> _messages;
 
-        public TemplateGenerator(ILogProvider logProvider, IStatusProvider statusProvider, ITelemetryProvider telemetryProvider, ITokenProvider tokenProvider, AsmRetriever asmRetriever)
+        public TemplateGenerator(ILogProvider logProvider, IStatusProvider statusProvider, ITelemetryProvider telemetryProvider, 
+            ITokenProvider tokenProvider, AsmRetriever asmRetriever, ISettingsProvider settingsProvider)
         {
             _logProvider = logProvider;
             _statusProvider = statusProvider;
             _telemetryProvider = telemetryProvider;
             _tokenProvider = tokenProvider;
             _asmRetriever = asmRetriever;
+            _settingsProvider = settingsProvider;
         }
-        public void GenerateTemplate(string tenantId, string subscriptionId, AsmArtefacts artefacts, StreamWriter templateWriter, StreamWriter blobDetailWriter)
+        public List<string> GenerateTemplate(string tenantId, string subscriptionId, AsmArtefacts artefacts, StreamWriter templateWriter, StreamWriter blobDetailWriter)
         {
             _logProvider.WriteLog("GenerateTemplate", "Start");
 
-            app.Default.ExecutionId = Guid.NewGuid().ToString();
+            _settingsProvider.ExecutionId = Guid.NewGuid().ToString();
             _resources = new List<Resource>();
             _parameters = new Dictionary<string, Parameter>();
-
+            _messages = new List<string>();
             _processedItems = new Dictionary<string, string>();
             _copyBlobDetails = new List<CopyBlobDetail>();
             _storageAccountNames = new Dictionary<string, string>();
@@ -143,7 +147,7 @@ namespace MIGAZ.Generator
             _logProvider.WriteLog("GenerateTemplate", "Write file copyblobdetails.json");
 
             // post Telemetry Record to ASMtoARMToolAPI
-            if (app.Default.AllowTelemetry)
+            if (_settingsProvider.AllowTelemetry)
             {
                 XmlDocument subscriptions = _asmRetriever.GetAzureASMResources("Subscriptions", subscriptionId, null, token);
                 string offercategories = "";
@@ -162,6 +166,7 @@ namespace MIGAZ.Generator
             _statusProvider.UpdateStatus("Ready");
 
             _logProvider.WriteLog("GenerateTemplate", "End");
+            return _messages;
         }
 
         private void BuildPublicIPAddressObject(ref NetworkInterface networkinterface)
@@ -209,7 +214,7 @@ namespace MIGAZ.Generator
             }
 
             Hashtable dnssettings = new Hashtable();
-            dnssettings.Add("domainNameLabel", (publicipaddress_name + app.Default.UniquenessSuffix).ToLower());
+            dnssettings.Add("domainNameLabel", (publicipaddress_name + _settingsProvider.UniquenessSuffix).ToLower());
 
             PublicIPAddress_Properties publicipaddress_properties = new PublicIPAddress_Properties();
             publicipaddress_properties.dnsSettings = dnssettings;
@@ -615,7 +620,13 @@ namespace MIGAZ.Generator
             _resources.Add(virtualnetwork);
             _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/virtualNetworks/" + virtualnetwork.name);
 
+            AddGatewaysToVirtualNetwork(subscriptionId, resource, token, virtualnetwork);
 
+            _logProvider.WriteLog("BuildVirtualNetworkObject", "End");
+        }
+
+        private void AddGatewaysToVirtualNetwork(string subscriptionId, XmlNode resource, string token, VirtualNetwork virtualnetwork)
+        {
             // Process Virtual Network Gateway if one exists
             if (resource.SelectNodes("Gateway").Count > 0)
             {
@@ -624,7 +635,7 @@ namespace MIGAZ.Generator
                 publicipaddress_properties.publicIPAllocationMethod = "Dynamic";
 
                 PublicIPAddress publicipaddress = new PublicIPAddress();
-                publicipaddress.name = virtualnetwork.name + "-VPNGateway-PIP";
+                publicipaddress.name = virtualnetwork.name + "-Gateway-PIP";
                 publicipaddress.location = virtualnetwork.location;
                 publicipaddress.properties = publicipaddress_properties;
 
@@ -638,7 +649,7 @@ namespace MIGAZ.Generator
                 Reference publicipaddress_ref = new Reference();
                 publicipaddress_ref.id = "[concat(resourceGroup().id, '/providers/Microsoft.Network/publicIPAddresses/" + publicipaddress.name + "')]";
 
-                dependson = new List<string>();
+                var dependson = new List<string>();
                 dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/virtualNetworks/" + virtualnetwork.name + "')]");
                 dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/publicIPAddresses/" + publicipaddress.name + "')]");
 
@@ -648,7 +659,7 @@ namespace MIGAZ.Generator
                 ipconfiguration_properties.publicIPAddress = publicipaddress_ref;
 
                 IpConfiguration virtualnetworkgateway_ipconfiguration = new IpConfiguration();
-                virtualnetworkgateway_ipconfiguration.name = "VPNGatewayIPConfig";
+                virtualnetworkgateway_ipconfiguration.name = "GatewayIPConfig";
                 virtualnetworkgateway_ipconfiguration.properties = ipconfiguration_properties;
 
                 VirtualNetworkGateway_Sku virtualnetworkgateway_sku = new VirtualNetworkGateway_Sku();
@@ -661,12 +672,12 @@ namespace MIGAZ.Generator
                 VirtualNetworkGateway_Properties virtualnetworkgateway_properties = new VirtualNetworkGateway_Properties();
                 virtualnetworkgateway_properties.ipConfigurations = virtualnetworkgateway_ipconfigurations;
                 virtualnetworkgateway_properties.sku = virtualnetworkgateway_sku;
-                virtualnetworkgateway_properties.gatewayType = "Vpn";
 
+                
                 // If there is VPN Client configuration
                 if (resource.SelectNodes("Gateway/VPNClientAddressPool/AddressPrefixes/AddressPrefix").Count > 0)
                 {
-                    addressprefixes = new List<string>();
+                    var addressprefixes = new List<string>();
                     addressprefixes.Add(resource.SelectNodes("Gateway/VPNClientAddressPool/AddressPrefixes/AddressPrefix")[0].InnerText);
 
                     AddressSpace vpnclientaddresspool = new AddressSpace();
@@ -706,34 +717,56 @@ namespace MIGAZ.Generator
                 Hashtable virtualnetworkgatewayinfo = new Hashtable();
                 virtualnetworkgatewayinfo.Add("virtualnetworkname", resource.SelectSingleNode("Name").InnerText);
                 virtualnetworkgatewayinfo.Add("localnetworksitename", "");
-                XmlDocument gateway = _asmRetriever.GetAzureASMResources("VirtualNetworkGateway", subscriptionId, virtualnetworkgatewayinfo, token);
 
-                string vpnType = gateway.SelectSingleNode("//GatewayType").InnerText;
-                if (vpnType == "StaticRouting")
+                var connectionTypeNodes = resource.SelectNodes("Gateway/Sites/LocalNetworkSite/Connections/Connection/Type");
+                if (connectionTypeNodes.Count > 0 && connectionTypeNodes[0].InnerText == "Dedicated")
                 {
-                    vpnType = "PolicyBased";
+                    virtualnetworkgateway_properties.gatewayType = "ExpressRoute";
+                    virtualnetworkgateway_properties.enableBgp = null;
+                    virtualnetworkgateway_properties.vpnType = null;
                 }
-                else if (vpnType == "DynamicRouting")
+                else
                 {
-                    vpnType = "RouteBased";
+                    virtualnetworkgateway_properties.gatewayType = "Vpn";
+                    XmlDocument gateway = _asmRetriever.GetAzureASMResources("VirtualNetworkGateway", subscriptionId, virtualnetworkgatewayinfo, token);
+                    string vpnType = gateway.SelectSingleNode("//GatewayType").InnerText;
+                    if (vpnType == "StaticRouting")
+                    {
+                        vpnType = "PolicyBased";
+                    }
+                    else if (vpnType == "DynamicRouting")
+                    {
+                        vpnType = "RouteBased";
+                    }
+                    virtualnetworkgateway_properties.vpnType = vpnType;
                 }
-                virtualnetworkgateway_properties.vpnType = vpnType;
 
                 VirtualNetworkGateway virtualnetworkgateway = new VirtualNetworkGateway();
                 virtualnetworkgateway.location = virtualnetwork.location;
-                virtualnetworkgateway.name = virtualnetwork.name + "-VPNGateway";
+                virtualnetworkgateway.name = virtualnetwork.name + "-Gateway";
                 virtualnetworkgateway.properties = virtualnetworkgateway_properties;
                 virtualnetworkgateway.dependsOn = dependson;
 
                 _processedItems.Add("Microsoft.Network/virtualNetworkGateways/" + virtualnetworkgateway.name, virtualnetworkgateway.location);
                 _resources.Add(virtualnetworkgateway);
                 _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/virtualNetworkGateways/" + virtualnetworkgateway.name);
+                AddLocalSiteToGateway(subscriptionId, resource, token, virtualnetwork, virtualnetworkgatewayinfo, virtualnetworkgateway);
+            }
+        }
 
-                // Local Network Gateways & Connections
-                foreach (XmlNode LocalNetworkSite in resource.SelectNodes("Gateway/Sites/LocalNetworkSite"))
+        private void AddLocalSiteToGateway(string subscriptionId, XmlNode resource, string token, VirtualNetwork virtualnetwork, Hashtable virtualnetworkgatewayinfo, VirtualNetworkGateway virtualnetworkgateway)
+        {
+            // Local Network Gateways & Connections
+            foreach (XmlNode LocalNetworkSite in resource.SelectNodes("Gateway/Sites/LocalNetworkSite"))
+            {
+                GatewayConnection_Properties gatewayconnection_properties = new GatewayConnection_Properties();
+                var dependson = new List<string>();
+
+                string connectionType = LocalNetworkSite.SelectSingleNode("Connections/Connection/Type").InnerText;
+                if (connectionType == "IPsec")
                 {
                     // Local Network Gateway
-                    addressprefixes = new List<string>();
+                    var addressprefixes = new List<string>();
                     foreach (XmlNode addressprefix in LocalNetworkSite.SelectNodes("AddressSpace/AddressPrefixes"))
                     {
                         addressprefixes.Add(addressprefix.SelectSingleNode("AddressPrefix").InnerText);
@@ -761,50 +794,52 @@ namespace MIGAZ.Generator
                     catch { }
                     _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/localNetworkGateways/" + localnetworkgateway.name);
 
-                    // Connections
-                    Reference virtualnetworkgateway_ref = new Reference();
-                    virtualnetworkgateway_ref.id = "[concat(resourceGroup().id, '/providers/Microsoft.Network/virtualNetworkGateways/" + virtualnetworkgateway.name + "')]";
-
                     Reference localnetworkgateway_ref = new Reference();
                     localnetworkgateway_ref.id = "[concat(resourceGroup().id, '/providers/Microsoft.Network/localNetworkGateways/" + localnetworkgateway.name + "')]";
-
-                    dependson = new List<string>();
-                    dependson.Add(virtualnetworkgateway_ref.id);
                     dependson.Add(localnetworkgateway_ref.id);
 
-                    GatewayConnection_Properties gatewayconnection_properties = new GatewayConnection_Properties();
-                    gatewayconnection_properties.connectionType = LocalNetworkSite.SelectSingleNode("Connections/Connection/Type").InnerText;
-                    gatewayconnection_properties.virtualNetworkGateway1 = virtualnetworkgateway_ref;
+                    gatewayconnection_properties.connectionType = connectionType;
                     gatewayconnection_properties.localNetworkGateway2 = localnetworkgateway_ref;
 
                     virtualnetworkgatewayinfo["localnetworksitename"] = LocalNetworkSite.SelectSingleNode("Name").InnerText;
                     XmlDocument connectionsharekey = _asmRetriever.GetAzureASMResources("VirtualNetworkGatewaySharedKey", subscriptionId, virtualnetworkgatewayinfo, token);
-
-                    if (!(connectionsharekey == null))
+                    if (connectionsharekey == null)
                     {
-                        gatewayconnection_properties.sharedKey = connectionsharekey.SelectSingleNode("//Value").InnerText;
-
-                        GatewayConnection gatewayconnection = new GatewayConnection();
-                        gatewayconnection.name = virtualnetworkgateway.name + "-" + localnetworkgateway.name + "-connection";
-                        gatewayconnection.location = virtualnetwork.location;
-                        gatewayconnection.properties = gatewayconnection_properties;
-                        gatewayconnection.dependsOn = dependson;
-
-                        _processedItems.Add("Microsoft.Network/connections/" + gatewayconnection.name, gatewayconnection.location);
-                        _resources.Add(gatewayconnection);
-                        _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/connections/" + gatewayconnection.name);
+                        gatewayconnection_properties.sharedKey = "***SHARED KEY GOES HERE***";
+                        _messages.Add($"Unable to retrieve shared key for VPN connection {virtualnetworkgateway.name}. Please edit the template to provide this value.");
                     }
                     else
                     {
-                        _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/connections/" + " NO SHARED KEY DEFINED");
+                        gatewayconnection_properties.sharedKey = connectionsharekey.SelectSingleNode("//Value").InnerText;
                     }
                 }
+                else if (connectionType == "Dedicated")
+                {
+                    gatewayconnection_properties.connectionType = "ExpressRoute";
+                    gatewayconnection_properties.peer = new Reference() { id = "/subscriptions/***/resourceGroups/***/providers/Microsoft.Network/expressRouteCircuits/***" };
+                    _messages.Add($"Gateway {virtualnetworkgateway.name} connects to ExpressRoute. MigAz is unable to migrate ExpressRoute circuits. Please create or convert the circuit yourself and update the circuit resource ID in the generated template.");
+                }
+
+                // Connections
+                Reference virtualnetworkgateway_ref = new Reference();
+                virtualnetworkgateway_ref.id = "[concat(resourceGroup().id, '/providers/Microsoft.Network/virtualNetworkGateways/" + virtualnetworkgateway.name + "')]";
+                     
+                dependson.Add(virtualnetworkgateway_ref.id);
+
+                gatewayconnection_properties.virtualNetworkGateway1 = virtualnetworkgateway_ref;
+
+                GatewayConnection gatewayconnection = new GatewayConnection();
+                gatewayconnection.name = virtualnetworkgateway.name + "-" + LocalNetworkSite.SelectSingleNode("Name").InnerText + "-connection";
+                gatewayconnection.location = virtualnetwork.location;
+                gatewayconnection.properties = gatewayconnection_properties;
+                gatewayconnection.dependsOn = dependson;
+
+                _processedItems.Add("Microsoft.Network/connections/" + gatewayconnection.name, gatewayconnection.location);
+                _resources.Add(gatewayconnection);
+                _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/connections/" + gatewayconnection.name);
+
             }
-
-            _logProvider.WriteLog("BuildVirtualNetworkObject", "End");
         }
-
-
 
         private NetworkSecurityGroup BuildNetworkSecurityGroup(string subscriptionId, string networksecuritygroupname, string token)
         {
@@ -1173,7 +1208,7 @@ namespace MIGAZ.Generator
             OsProfile osprofile = new OsProfile();
 
             // if the tool is configured to create new VMs with empty data disks
-            if (app.Default.BuildEmpty)
+            if (_settingsProvider.BuildEmpty)
             {
                 osdisk.createOption = "FromImage";
 
@@ -1265,7 +1300,7 @@ namespace MIGAZ.Generator
                 newdiskurl = olddiskurl.Replace(oldstorageaccountname + ".", newstorageaccountname + ".");
 
                 // if the tool is configured to create new VMs with empty data disks
-                if (app.Default.BuildEmpty)
+                if (_settingsProvider.BuildEmpty)
                 {
                     datadisk.createOption = "Empty";
                 }
@@ -1304,13 +1339,13 @@ namespace MIGAZ.Generator
             }
 
             StorageProfile storageprofile = new StorageProfile();
-            if (app.Default.BuildEmpty) { storageprofile.imageReference = imagereference; }
+            if (_settingsProvider.BuildEmpty) { storageprofile.imageReference = imagereference; }
             storageprofile.osDisk = osdisk;
             storageprofile.dataDisks = datadisks;
 
             VirtualMachine_Properties virtualmachine_properties = new VirtualMachine_Properties();
             virtualmachine_properties.hardwareProfile = hardwareprofile;
-            if (app.Default.BuildEmpty) { virtualmachine_properties.osProfile = osprofile; }
+            if (_settingsProvider.BuildEmpty) { virtualmachine_properties.osProfile = osprofile; }
             virtualmachine_properties.networkProfile = networkprofile;
             virtualmachine_properties.storageProfile = storageprofile;
 
@@ -1327,7 +1362,7 @@ namespace MIGAZ.Generator
             //    {
             //        string json = Base64Decode(resourceextensionreference.SelectSingleNode("ResourceExtensionParameterValues/ResourceExtensionParameterValue/Value").InnerText);
             //        var resourceextensionparametervalue = JsonConvert.DeserializeObject<dynamic>(json);
-            //        string diagnosticsstorageaccount = resourceextensionparametervalue.storageAccount.Value + app.Default.UniquenessSuffix;
+            //        string diagnosticsstorageaccount = resourceextensionparametervalue.storageAccount.Value + _settingsProvider.UniquenessSuffix;
             //        string xmlcfgvalue = Base64Decode(resourceextensionparametervalue.xmlCfg.Value);
             //        xmlcfgvalue = xmlcfgvalue.Replace("\n", "");
             //        xmlcfgvalue = xmlcfgvalue.Replace("\r", "");
@@ -1338,7 +1373,7 @@ namespace MIGAZ.Generator
             //        XmlNodeList mynodelist = xmlcfg.SelectNodes("/wadCfg/DiagnosticMonitorConfiguration/Metrics");
 
 
-                    
+
 
             //        extension_iaasdiagnostics = new Extension();
             //        extension_iaasdiagnostics.name = "Microsoft.Insights.VMDiagnosticsSettings";
@@ -1360,7 +1395,7 @@ namespace MIGAZ.Generator
             //        extension_iaasdiagnostics.properties = extension_iaasdiagnostics_properties;
             //    }
             //}
-            
+
             // Availability Set
             string availabilitysetname = virtualmachineinfo["cloudservicename"] + "-defaultAS";
             if (resource.SelectSingleNode("//AvailabilitySetName") != null)
@@ -1405,7 +1440,7 @@ namespace MIGAZ.Generator
             storageaccount_properties.accountType = resource.SelectSingleNode("//StorageServiceProperties/AccountType").InnerText;
 
             StorageAccount storageaccount = new StorageAccount();
-            //storageaccount.name = resource.SelectSingleNode("//ServiceName").InnerText + app.Default.UniquenessSuffix;
+            //storageaccount.name = resource.SelectSingleNode("//ServiceName").InnerText + _settingsProvider.UniquenessSuffix;
             storageaccount.name = GetNewStorageAccountName( resource.SelectSingleNode("//ServiceName").InnerText );
             storageaccount.location = resource.SelectSingleNode("//ExtendedProperties/ExtendedProperty[Name='ResourceLocation']/Value").InnerText;
             storageaccount.properties = storageaccount_properties;
@@ -1473,12 +1508,12 @@ namespace MIGAZ.Generator
             }
             else
             {
-                newStorageAccountName = oldStorageAccountName + app.Default.UniquenessSuffix;
+                newStorageAccountName = oldStorageAccountName + _settingsProvider.UniquenessSuffix;
 
                 if (newStorageAccountName.Length > 24)
                 {
                     string randomString = Guid.NewGuid().ToString("N").Substring(0, 4);
-                    newStorageAccountName = newStorageAccountName.Substring(0, (24 - randomString.Length - app.Default.UniquenessSuffix.Length)) + randomString + app.Default.UniquenessSuffix;
+                    newStorageAccountName = newStorageAccountName.Substring(0, (24 - randomString.Length - _settingsProvider.UniquenessSuffix.Length)) + randomString + _settingsProvider.UniquenessSuffix;
                 }
 
                 _storageAccountNames.Add(oldStorageAccountName, newStorageAccountName);

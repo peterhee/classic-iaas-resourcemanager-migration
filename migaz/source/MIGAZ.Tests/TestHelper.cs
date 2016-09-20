@@ -21,8 +21,9 @@ namespace MIGAZ.Tests
             IStatusProvider statusProvider = new FakeStatusProvider();
             ITelemetryProvider telemetryProvider = new FakeTelemetryProvider();
             ITokenProvider tokenProvider = new FakeTokenProvider();
+            ISettingsProvider settingsProvider = new FakeSettingsProvider();
             asmRetreiver = new FakeAsmRetriever(logProvider, statusProvider);
-            templateGenerator = new TemplateGenerator(logProvider, statusProvider, telemetryProvider, tokenProvider, asmRetreiver);
+            templateGenerator = new TemplateGenerator(logProvider, statusProvider, telemetryProvider, tokenProvider, asmRetreiver, settingsProvider);
         }
 
         public static JObject GetJsonData(MemoryStream closedStream)

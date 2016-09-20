@@ -31,7 +31,8 @@ namespace MIGAZ
             _saveSelectionProvider = new UISaveSelectionProvider();
             var tokenProvider = new InteractiveTokenProvider();
             var telemetryProvider = new CloudTelemetryProvider();
-            _templateGenerator = new TemplateGenerator(_logProvider, _statusProvider, telemetryProvider, tokenProvider, _asmRetriever);
+            var settingsProvider = new AppSettingsProvider();
+            _templateGenerator = new TemplateGenerator(_logProvider, _statusProvider, telemetryProvider, tokenProvider, _asmRetriever, settingsProvider);
         }
 
         private void Window_Load(object sender, EventArgs e)
@@ -280,8 +281,22 @@ namespace MIGAZ
 
                 var templateWriter = new StreamWriter(Path.Combine(txtDestinationFolder.Text, "export.json"));
                 var blobDetailWriter = new StreamWriter(Path.Combine(txtDestinationFolder.Text, "copyblobdetails.json"));
-                _templateGenerator.GenerateTemplate(subscriptionsAndTenants[subscriptionid], subscriptionid, artefacts, templateWriter, blobDetailWriter);
-                MessageBox.Show("Template has been generated successfully.", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                try
+                {
+                    var messages = _templateGenerator.GenerateTemplate(subscriptionsAndTenants[subscriptionid], subscriptionid, artefacts, templateWriter, blobDetailWriter);
+                    string messageInfo = String.Empty;
+                    if (messages.Count > 0)
+                    {
+                        messageInfo += "\r\n\r\nThe following messages were provided:";
+                        messages.ForEach(m => messageInfo += "\r\n" + m);
+                    }
+                    MessageBox.Show("Template has been generated successfully." + messageInfo, this.Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    writeLog("btnExport_Click", "Error generating template : " + ex.ToString());
+                    MessageBox.Show("Something went wrong when generating the template. Check the log file for details.", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
 
             btnExport.Enabled = true;
@@ -291,7 +306,7 @@ namespace MIGAZ
 
         private void writeLog(string function, string message)
         {
-            string logfilepath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\MIGAZ-" + string.Format("{0:yyyyMMdd}", DateTime.Now) + ".log";
+            string logfilepath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\MigAz\\MIGAZ-" + string.Format("{0:yyyyMMdd}", DateTime.Now) + ".log";
             string text = DateTime.Now.ToString() + "   " + function + "  " + message + Environment.NewLine;
             File.AppendAllText(logfilepath, text);
         }

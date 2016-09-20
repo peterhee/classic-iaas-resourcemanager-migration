@@ -95,6 +95,9 @@ namespace MIGAZ.Tests.Fakes
                         resourceType = "RouteTable";
                         info.Add("name", parts[1]);
                         break;
+                    case "reservedips":
+                        resourceType = "ReservedIPs";
+                        break;
                     default:
                         throw new Exception();
                 }

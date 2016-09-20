@@ -40,6 +40,10 @@
       <Name>property-name</Name>
       <Value>property-value</Value>
     </ExtendedProperty>
+    <ExtendedProperty>
+      <Name>ResourceLocation</Name>
+      <Value>Antarctica</Value>
+    </ExtendedProperty>
   </ExtendedProperties>
   <Capabilities>
     <Capability>storage-account-capability</Capability>
