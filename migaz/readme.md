@@ -104,7 +104,8 @@ Post successful authentication the Subscriptions will be loaded.
 
 **Step 5:** The Export Objects will then collect all the properties of selected resources and create a JSON Template and a blob details file in the Output Folder selected.
 
-**Step 6:** Once the export completes, start the deployment of the template using the cmdlet:
+**Step 6:** Once the export completes, click the "Next Steps" tab to generate a customized documentation page showing how to deploy
+the template to your Azure environment. Alternatively follow the instructions below to start the deployment of the template using the cmdlet:
 
 
     New-AzureRmResourceGroupDeployment -Name "<Deployment Name>" -ResourceGroupName "<Resource Group Name>" -TemplateFile "<full path of the export.JSON>" -Verbose
@@ -198,6 +199,13 @@ In case of any issues during the deployment of the export.JSON you need to troub
 
 
 ## Release Notes
+
+### v1.4.7.0
+ - New dialog after exporting template that generates instructions on how to deploy to ARM.
+
+### v1.4.6.0
+ - Support for VNETs attached to ExpressRoute circuts
+ - Fix unit tests
 
 ### v1.4.5.0
 - Add Auto Select Dependencies option
