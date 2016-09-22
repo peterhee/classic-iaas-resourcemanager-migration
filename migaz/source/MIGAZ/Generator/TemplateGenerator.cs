@@ -821,7 +821,7 @@ namespace MIGAZ.Generator
                     if (connectionsharekey == null)
                     {
                         gatewayconnection_properties.sharedKey = "***SHARED KEY GOES HERE***";
-                        _messages.Add($"Unable to retrieve shared key for VPN connection {virtualnetworkgateway.name}. Please edit the template to provide this value.");
+                        _messages.Add($"Unable to retrieve shared key for VPN connection '{virtualnetworkgateway.name}'. Please edit the template to provide this value.");
                     }
                     else
                     {
@@ -832,7 +832,7 @@ namespace MIGAZ.Generator
                 {
                     gatewayconnection_properties.connectionType = "ExpressRoute";
                     gatewayconnection_properties.peer = new Reference() { id = "/subscriptions/***/resourceGroups/***/providers/Microsoft.Network/expressRouteCircuits/***" };
-                    _messages.Add($"Gateway {virtualnetworkgateway.name} connects to ExpressRoute. MigAz is unable to migrate ExpressRoute circuits. Please create or convert the circuit yourself and update the circuit resource ID in the generated template.");
+                    _messages.Add($"Gateway '{virtualnetworkgateway.name}' connects to ExpressRoute. MigAz is unable to migrate ExpressRoute circuits. Please create or convert the circuit yourself and update the circuit resource ID in the generated template.");
                 }
 
                 // Connections
@@ -998,13 +998,13 @@ namespace MIGAZ.Generator
                 }
                 else
                 {
-                    _messages.Add($"VM 'virtualmachinename' has no subnet defined. We have placed it on a subnet called 'Subnet1'.");
+                    _messages.Add($"VM '{virtualmachinename}' has no subnet defined. We have placed it on a subnet called 'Subnet1'.");
                 }
             }
             else
             {
                 virtualnetworkname = cloudservicename + "-VNET";
- 
+                _messages.Add($"VM '{virtualmachinename}' has no VNET defined. We have placed it in a new VNET called {virtualnetworkname}.");
             }
 
             Reference subnet_ref = new Reference();
@@ -1423,6 +1423,10 @@ namespace MIGAZ.Generator
             if (resource.SelectSingleNode("//AvailabilitySetName") != null)
             {
                 availabilitysetname = resource.SelectSingleNode("//AvailabilitySetName").InnerText;
+            }
+            else
+            {
+                _messages.Add($"VM '{virtualmachinename}' is not in an availability set. Putting it in a new availability set '{availabilitysetname}'.");
             }
 
             Reference availabilityset = new Reference();
