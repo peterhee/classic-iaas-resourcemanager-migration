@@ -561,50 +561,65 @@ namespace MIGAZ.Generator
             virtualnetwork.dependsOn = dependson;
 
             List<Subnet> subnets = new List<Subnet>();
-            foreach (XmlNode subnetnode in resource.SelectNodes("Subnets/Subnet"))
+            if (resource.SelectNodes("Subnets/Subnet").Count == 0)
             {
                 Subnet_Properties properties = new Subnet_Properties();
-                properties.addressPrefix = subnetnode.SelectSingleNode("AddressPrefix").InnerText;
+                properties.addressPrefix = addressprefixes[0];
 
                 Subnet subnet = new Subnet();
-                subnet.name = subnetnode.SelectSingleNode("Name").InnerText.Replace(" ", "");
+                subnet.name = "Subnet1";
                 subnet.properties = properties;
 
                 subnets.Add(subnet);
-
-                // add Network Security Group if exists
-                if (subnetnode.SelectNodes("NetworkSecurityGroup").Count > 0)
+                _messages.Add($"VNET '{virtualnetwork.name}' has no subnets defined. We've created a default subnet 'Subnet1' covering the entire address space.");
+            }
+            else
+            {
+                foreach (XmlNode subnetnode in resource.SelectNodes("Subnets/Subnet"))
                 {
-                    NetworkSecurityGroup networksecuritygroup = BuildNetworkSecurityGroup(subscriptionId, subnetnode.SelectSingleNode("NetworkSecurityGroup").InnerText, token);
+                    Subnet_Properties properties = new Subnet_Properties();
+                    properties.addressPrefix = subnetnode.SelectSingleNode("AddressPrefix").InnerText;
 
-                    // Add NSG reference to the subnet
-                    Reference networksecuritygroup_ref = new Reference();
-                    networksecuritygroup_ref.id = "[concat(resourceGroup().id,'/providers/Microsoft.Network/networkSecurityGroups/" + networksecuritygroup.name + "')]";
+                    Subnet subnet = new Subnet();
+                    subnet.name = subnetnode.SelectSingleNode("Name").InnerText.Replace(" ", "");
+                    subnet.properties = properties;
 
-                    properties.networkSecurityGroup = networksecuritygroup_ref;
+                    subnets.Add(subnet);
 
-                    // Add NSG dependsOn to the Virtual Network object
-                    if (!virtualnetwork.dependsOn.Contains(networksecuritygroup_ref.id))
+                    // add Network Security Group if exists
+                    if (subnetnode.SelectNodes("NetworkSecurityGroup").Count > 0)
                     {
-                        virtualnetwork.dependsOn.Add(networksecuritygroup_ref.id);
+                        NetworkSecurityGroup networksecuritygroup = BuildNetworkSecurityGroup(subscriptionId, subnetnode.SelectSingleNode("NetworkSecurityGroup").InnerText, token);
+
+                        // Add NSG reference to the subnet
+                        Reference networksecuritygroup_ref = new Reference();
+                        networksecuritygroup_ref.id = "[concat(resourceGroup().id,'/providers/Microsoft.Network/networkSecurityGroups/" + networksecuritygroup.name + "')]";
+
+                        properties.networkSecurityGroup = networksecuritygroup_ref;
+
+                        // Add NSG dependsOn to the Virtual Network object
+                        if (!virtualnetwork.dependsOn.Contains(networksecuritygroup_ref.id))
+                        {
+                            virtualnetwork.dependsOn.Add(networksecuritygroup_ref.id);
+                        }
                     }
-                }
 
-                // add Route Table if exists
-                if (subnetnode.SelectNodes("RouteTableName").Count > 0)
-                {
-                    RouteTable routetable = BuildRouteTable(subscriptionId, subnetnode.SelectSingleNode("RouteTableName").InnerText, token);
-
-                    // Add Route Table reference to the subnet
-                    Reference routetable_ref = new Reference();
-                    routetable_ref.id = "[concat(resourceGroup().id,'/providers/Microsoft.Network/routeTables/" + routetable.name + "')]";
-
-                    properties.routeTable = routetable_ref;
-
-                    // Add Route Table dependsOn to the Virtual Network object
-                    if (!virtualnetwork.dependsOn.Contains(routetable_ref.id))
+                    // add Route Table if exists
+                    if (subnetnode.SelectNodes("RouteTableName").Count > 0)
                     {
-                        virtualnetwork.dependsOn.Add(routetable_ref.id);
+                        RouteTable routetable = BuildRouteTable(subscriptionId, subnetnode.SelectSingleNode("RouteTableName").InnerText, token);
+
+                        // Add Route Table reference to the subnet
+                        Reference routetable_ref = new Reference();
+                        routetable_ref.id = "[concat(resourceGroup().id,'/providers/Microsoft.Network/routeTables/" + routetable.name + "')]";
+
+                        properties.routeTable = routetable_ref;
+
+                        // Add Route Table dependsOn to the Virtual Network object
+                        if (!virtualnetwork.dependsOn.Contains(routetable_ref.id))
+                        {
+                            virtualnetwork.dependsOn.Add(routetable_ref.id);
+                        }
                     }
                 }
             }
@@ -972,17 +987,24 @@ namespace MIGAZ.Generator
             string deploymentname = virtualmachineinfo["deploymentname"].ToString();
             string virtualnetworkname = virtualmachineinfo["virtualnetworkname"].ToString();
             string loadbalancername = virtualmachineinfo["loadbalancername"].ToString();
-            string subnet_name = "";
+            string subnet_name = "Subnet1";
 
             if (virtualnetworkname != "empty")
             {
                 virtualnetworkname = virtualmachineinfo["virtualnetworkname"].ToString().Replace(" ", "");
-                subnet_name = resource.SelectSingleNode("//ConfigurationSets/ConfigurationSet/SubnetNames[1]/SubnetName").InnerText.Replace(" ", "");
+                if (resource.SelectSingleNode("//ConfigurationSets/ConfigurationSet/SubnetNames/SubnetName") != null)
+                {
+                    subnet_name = resource.SelectSingleNode("//ConfigurationSets/ConfigurationSet/SubnetNames[1]/SubnetName").InnerText.Replace(" ", "");
+                }
+                else
+                {
+                    _messages.Add($"VM 'virtualmachinename' has no subnet defined. We have placed it on a subnet called 'Subnet1'.");
+                }
             }
             else
             {
                 virtualnetworkname = cloudservicename + "-VNET";
-                subnet_name = "Subnet1";
+ 
             }
 
             Reference subnet_ref = new Reference();

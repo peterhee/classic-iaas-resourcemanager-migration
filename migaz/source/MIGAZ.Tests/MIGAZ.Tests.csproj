@@ -89,6 +89,18 @@
     <Content Include="TestDocs\VM2\VirtualMachine-myasmvm-myasmvm-myasmvm.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="TestDocs\VM3\CloudService-CS3.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDocs\VM3\ReservedIPs.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDocs\VM3\StorageAccountKeys-fakeaccount.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDocs\VM3\VirtualMachine-CS3-VM3-Dep3.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="TestDocs\VNET1\ClientRootCertificate-10.2.0.0-YYYY.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
