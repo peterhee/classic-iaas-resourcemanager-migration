@@ -94,5 +94,37 @@ namespace MIGAZ.Tests
             Assert.AreEqual("Disk1", dataDisks[0]["name"].Value<string>());
             Assert.AreEqual("Disk2", dataDisks[1]["name"].Value<string>());
         }
+
+        [TestMethod]
+        public void ValidateVMInVnetButNotInSubnet()
+        {
+            FakeAsmRetriever fakeAsmRetriever;
+            TemplateGenerator templateGenerator;
+            TestHelper.SetupObjects(out fakeAsmRetriever, out templateGenerator);
+            fakeAsmRetriever.LoadDocuments(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestDocs\\VM3"));
+
+            var templateStream = new MemoryStream();
+            var blobDetailStream = new MemoryStream();
+            var artefacts = new AsmArtefacts();
+            artefacts.VirtualMachines.Add(new CloudServiceVM() { CloudService = "CS3", VirtualMachine = "VM3" });
+
+            templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
+
+            var templateJson = TestHelper.GetJsonData(templateStream);
+
+            // Validate VM
+            var vmResource = templateJson["resources"].Where(
+                j => j["type"].Value<string>() == "Microsoft.Compute/virtualMachines").Single();
+            Assert.AreEqual("VM3", vmResource["name"].Value<string>());
+            StringAssert.Contains(vmResource["properties"]["networkProfile"]["networkInterfaces"][0]["id"].Value<string>(),
+                "'/providers/Microsoft.Network/networkInterfaces/VM3'");
+
+            // Validate NIC
+            var nicResource = templateJson["resources"].Where(
+                j => j["type"].Value<string>() == "Microsoft.Network/networkInterfaces").Single();
+            Assert.AreEqual("VM3", nicResource["name"].Value<string>());
+            StringAssert.Contains(nicResource["properties"]["ipConfigurations"][0]["properties"]["subnet"]["id"].Value<string>(),
+                "'/providers/Microsoft.Network/virtualNetworks/POC-Vnet/subnets/Subnet1'");
+        }
     }
 }

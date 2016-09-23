@@ -199,6 +199,8 @@ In case of any issues during the deployment of the export.JSON you need to troub
 
 
 ## Release Notes
+### v1.4.8.0
+ - Fix error when exporting a VM that is in a VNET with no subnets defined
 
 ### v1.4.7.0
  - New dialog after exporting template that generates instructions on how to deploy to ARM.

@@ -168,5 +168,37 @@ namespace MIGAZ.Tests
             Assert.AreEqual(1, messages.Count);
             StringAssert.Contains(messages[0], "ExpressRoute");
         }
+
+        [TestMethod]
+        public void ValidateSingleVnetWithNoSubnetsGetsNewDefaultSubet()
+        {
+            FakeAsmRetriever fakeAsmRetriever;
+            TemplateGenerator templateGenerator;
+            TestHelper.SetupObjects(out fakeAsmRetriever, out templateGenerator);
+            fakeAsmRetriever.LoadDocuments(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestDocs\\VNET4"));
+
+            var templateStream = new MemoryStream();
+            var blobDetailStream = new MemoryStream();
+            var artefacts = new AsmArtefacts();
+            artefacts.VirtualNetworks.Add("asmnet");
+
+            var messages = templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
+
+            JObject templateJson = TestHelper.GetJsonData(templateStream);
+
+            // Validate VNETs
+            var vnets = templateJson["resources"].Children().Where(
+                r => r["type"].Value<string>() == "Microsoft.Network/virtualNetworks");
+            Assert.AreEqual(1, vnets.Count());
+            Assert.AreEqual("asmnet", vnets.First()["name"].Value<string>());
+            Assert.AreEqual("10.0.0.0/20", vnets.First()["properties"]["addressSpace"]["addressPrefixes"][0].Value<string>());
+
+            // Validate subnets
+            var subnets = vnets.First()["properties"]["subnets"];
+            Assert.AreEqual(1, subnets.Count());
+            Assert.AreEqual("Subnet1", subnets[0]["name"].Value<string>());
+            Assert.AreEqual("10.0.0.0/20", subnets[0]["properties"]["addressPrefix"].Value<string>());
+
+        }
     }
 }
