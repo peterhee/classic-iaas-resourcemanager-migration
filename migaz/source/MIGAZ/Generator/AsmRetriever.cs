@@ -16,6 +16,7 @@ namespace MIGAZ.Generator
     {
         private ILogProvider _logProvider;
         private IStatusProvider _statusProvider;
+        private object _lockObject = new object();
 
         public Dictionary<string, XmlDocument> _documentCache = new Dictionary<string, XmlDocument>();
 
@@ -178,13 +179,16 @@ namespace MIGAZ.Generator
 
         private void writeXMLtoFile(string url, string xml)
         {
-            string logfilepath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\MIGAZ\\MIGAZ-XML-" + string.Format("{0:yyyyMMdd}", DateTime.Now) + ".log";
-            string text = DateTime.Now.ToString() + "   " + url + Environment.NewLine;
-            File.AppendAllText(logfilepath, text);
-            text = xml + Environment.NewLine;
-            File.AppendAllText(logfilepath, text);
-            text = Environment.NewLine;
-            File.AppendAllText(logfilepath, text);
+            lock (_lockObject)
+            {
+                string logfilepath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\MIGAZ\\MIGAZ-XML-" + string.Format("{0:yyyyMMdd}", DateTime.Now) + ".log";
+                string text = DateTime.Now.ToString() + "   " + url + Environment.NewLine;
+                File.AppendAllText(logfilepath, text);
+                text = xml + Environment.NewLine;
+                File.AppendAllText(logfilepath, text);
+                text = Environment.NewLine;
+                File.AppendAllText(logfilepath, text);
+            }
         }
 
         public virtual async Task<VMDetails> GetVMDetails(string subscriptionId, string cloudServiceName, string virtualMachineName, string token)

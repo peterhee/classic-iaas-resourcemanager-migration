@@ -840,7 +840,7 @@ namespace MIGAZ.Generator
                 gatewayconnection_properties.virtualNetworkGateway1 = virtualnetworkgateway_ref;
 
                 GatewayConnection gatewayconnection = new GatewayConnection();
-                gatewayconnection.name = virtualnetworkgateway.name + "-" + LocalNetworkSite.SelectSingleNode("Name").InnerText + "-connection";
+                gatewayconnection.name = virtualnetworkgateway.name + "-" + LocalNetworkSite.SelectSingleNode("Name").InnerText.Replace(' ', '_') + "-connection";
                 gatewayconnection.location = virtualnetwork.location;
                 gatewayconnection.properties = gatewayconnection_properties;
                 gatewayconnection.dependsOn = dependson;
@@ -878,10 +878,8 @@ namespace MIGAZ.Generator
                     securityrule_properties.direction = rule.SelectSingleNode("Type").InnerText;
                     securityrule_properties.priority = long.Parse(rule.SelectSingleNode("Priority").InnerText);
                     securityrule_properties.access = rule.SelectSingleNode("Action").InnerText;
-                    securityrule_properties.sourceAddressPrefix = rule.SelectSingleNode("SourceAddressPrefix").InnerText;
-                    securityrule_properties.sourceAddressPrefix.Replace("_", "");
-                    securityrule_properties.destinationAddressPrefix = rule.SelectSingleNode("DestinationAddressPrefix").InnerText;
-                    securityrule_properties.destinationAddressPrefix.Replace("_", "");
+                    securityrule_properties.sourceAddressPrefix = rule.SelectSingleNode("SourceAddressPrefix").InnerText.Replace("_", "");
+                    securityrule_properties.destinationAddressPrefix = rule.SelectSingleNode("DestinationAddressPrefix").InnerText.Replace("_", ""); 
                     securityrule_properties.sourcePortRange = rule.SelectSingleNode("SourcePortRange").InnerText;
                     securityrule_properties.destinationPortRange = rule.SelectSingleNode("DestinationPortRange").InnerText;
                     securityrule_properties.protocol = rule.SelectSingleNode("Protocol").InnerText;
