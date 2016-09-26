@@ -111,6 +111,7 @@
     <Compile Include="Generator\ITokenProvider.cs" />
     <Compile Include="Generator\ServiceUrls.cs" />
     <Compile Include="Generator\UISaveSelectionProvider.cs" />
+    <Compile Include="Generator\VMDetails.cs" />
     <Compile Include="Models\CopyBlobDetail.cs" />
     <Compile Include="Models\ARM.cs" />
     <Compile Include="Forms\Options.cs">

@@ -8,6 +8,7 @@ using System.IO;
 using MIGAZ.Models;
 using Newtonsoft.Json.Linq;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace MIGAZ.Tests
 {
@@ -15,7 +16,7 @@ namespace MIGAZ.Tests
     public class VirtualMachineTests
     {
         
-        private JObject GenerateSingleVMTemplate()
+        private async Task<JObject> GenerateSingleVMTemplate()
 
         {
             FakeAsmRetriever fakeAsmRetriever;
@@ -28,15 +29,15 @@ namespace MIGAZ.Tests
             var artefacts = new AsmArtefacts();
             artefacts.VirtualMachines.Add(new CloudServiceVM() { CloudService = "myservice", VirtualMachine = "myservice" });
 
-            templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
+            await templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
 
             return TestHelper.GetJsonData(templateStream);
         }
 
         [TestMethod]
-        public void VMDiskUrlsAreCorrectlyUpdated()
+        public async Task VMDiskUrlsAreCorrectlyUpdated()
         {
-            var templateJson = GenerateSingleVMTemplate();
+            var templateJson = await GenerateSingleVMTemplate();
             var vmResource = templateJson["resources"].Where(j => j["type"].Value<string>() == "Microsoft.Compute/virtualMachines").Single();
             Assert.AreEqual("myservice", vmResource["name"]);
 
@@ -45,9 +46,9 @@ namespace MIGAZ.Tests
         }
 
         [TestMethod]
-        public void AvailabilitySetNameIsBasedOnCloudServceName()
+        public async Task AvailabilitySetNameIsBasedOnCloudServceName()
         {
-            var templateJson = GenerateSingleVMTemplate();
+            var templateJson = await GenerateSingleVMTemplate();
 
             string expectedASName = "myservice-defaultAS";
             string expectedASId = $"[concat(resourceGroup().id, '/providers/Microsoft.Compute/availabilitySets/{expectedASName}')]";
@@ -61,7 +62,7 @@ namespace MIGAZ.Tests
         }
 
         [TestMethod]
-        public void ValidateSingleVMWithDataDisksNotInVnet()
+        public async Task ValidateSingleVMWithDataDisksNotInVnet()
         {
             FakeAsmRetriever fakeAsmRetriever;
             TemplateGenerator templateGenerator;
@@ -73,7 +74,7 @@ namespace MIGAZ.Tests
             var artefacts = new AsmArtefacts();
             artefacts.VirtualMachines.Add(new CloudServiceVM() { CloudService = "myasmvm", VirtualMachine = "myasmvm" });
 
-            templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
+            await templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
 
             var templateJson = TestHelper.GetJsonData(templateStream);
 
@@ -96,7 +97,7 @@ namespace MIGAZ.Tests
         }
 
         [TestMethod]
-        public void ValidateVMInVnetButNotInSubnet()
+        public async Task ValidateVMInVnetButNotInSubnet()
         {
             FakeAsmRetriever fakeAsmRetriever;
             TemplateGenerator templateGenerator;
@@ -108,7 +109,7 @@ namespace MIGAZ.Tests
             var artefacts = new AsmArtefacts();
             artefacts.VirtualMachines.Add(new CloudServiceVM() { CloudService = "CS3", VirtualMachine = "VM3" });
 
-            templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
+            await templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
 
             var templateJson = TestHelper.GetJsonData(templateStream);
 
