@@ -10,6 +10,8 @@ using System.Reflection;
 using MIGAZ.Models;
 using MIGAZ.Generator;
 using MIGAZ.Forms;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace MIGAZ
 {
@@ -53,7 +55,7 @@ namespace MIGAZ
             }
         }
 
-        private void btnGetToken_Click(object sender, EventArgs e)
+        private async void btnGetToken_Click(object sender, EventArgs e)
         {
             writeLog("GetToken_Click", "Start");
 
@@ -70,7 +72,7 @@ namespace MIGAZ
             if (token != null)
             {
                 subscriptionsAndTenants = new Dictionary<string, string>();
-                foreach (XmlNode subscription in _asmRetriever.GetAzureASMResources("Subscriptions", null, null, token).SelectNodes("//Subscription"))
+                foreach (XmlNode subscription in (await _asmRetriever.GetAzureASMResources("Subscriptions", null, null, token)).SelectNodes("//Subscription"))
                 {
                     cmbSubscriptions.Items.Add(subscription.SelectSingleNode("SubscriptionID").InnerText + " | " + subscription.SelectSingleNode("SubscriptionName").InnerText);
                     subscriptionsAndTenants.Add(subscription.SelectSingleNode("SubscriptionID").InnerText, subscription.SelectSingleNode("AADTenantID").InnerText);
@@ -119,7 +121,7 @@ namespace MIGAZ
 
        
 
-        private void cmbSubscriptions_SelectedIndexChanged(object sender, EventArgs e)
+        private async void cmbSubscriptions_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (cmbSubscriptions.Enabled == true)
             {
@@ -133,57 +135,39 @@ namespace MIGAZ
                 subscriptionid = cmbSubscriptions.SelectedItem.ToString().Split(new char[] {'|'})[0].ToString().Trim();
                 var token = GetToken(subscriptionsAndTenants[subscriptionid], PromptBehavior.Auto);
 
-                foreach (XmlNode virtualnetworksite in _asmRetriever.GetAzureASMResources("VirtualNetworks", subscriptionid, null, token).SelectNodes("//VirtualNetworkSite"))
+                var retrieveTasks = new List<Task<XmlDocument>>();
+                Task<XmlDocument> vnetRetrieveTask = _asmRetriever.GetAzureASMResources("VirtualNetworks", subscriptionid, null, token);
+                Task<XmlDocument> storageRetrieveTask = _asmRetriever.GetAzureASMResources("StorageAccounts", subscriptionid, null, token);
+                Task<XmlDocument> cloudServiceRetrieveTask = _asmRetriever.GetAzureASMResources("CloudServices", subscriptionid, null, token);
+                retrieveTasks.AddRange(new[] { vnetRetrieveTask, storageRetrieveTask, cloudServiceRetrieveTask });
+
+                await Task.WhenAll(retrieveTasks);
+
+                foreach (XmlNode virtualnetworksite in vnetRetrieveTask.Result.SelectNodes("//VirtualNetworkSite"))
                 {
                     lvwVirtualNetworks.Items.Add(virtualnetworksite.SelectSingleNode("Name").InnerText);
-                    Application.DoEvents();
                 }
 
-                foreach (XmlNode storageaccount in _asmRetriever.GetAzureASMResources("StorageAccounts", subscriptionid, null, token).SelectNodes("//StorageService"))
+                foreach (XmlNode storageaccount in storageRetrieveTask.Result.SelectNodes("//StorageService"))
                 {
                     lvwStorageAccounts.Items.Add(storageaccount.SelectSingleNode("ServiceName").InnerText);
-                    Application.DoEvents();
                 }
 
-                foreach (XmlNode cloudservice in _asmRetriever.GetAzureASMResources("CloudServices", subscriptionid, null, token).SelectNodes("//HostedService"))
+                var cloudServiceVMTasks = new List<Task>();
+                foreach (XmlNode cloudservice in cloudServiceRetrieveTask.Result.SelectNodes("//HostedService"))
                 {
-                    string cloudservicename = cloudservice.SelectSingleNode("ServiceName").InnerText;
-
-                    Hashtable cloudserviceinfo = new Hashtable();
-                    cloudserviceinfo.Add("name", cloudservicename);
-
-                    XmlDocument hostedservice = _asmRetriever.GetAzureASMResources("CloudService", subscriptionid, cloudserviceinfo, token);
-                    if (hostedservice.SelectNodes("//Deployments/Deployment").Count > 0)
-                    {
-                        if (hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectNodes("RoleType").Count > 0)
-                        {
-                            if (hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectSingleNode("RoleType").InnerText == "PersistentVMRole")
-                            {
-                               
-                                XmlNodeList roles = hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectNodes("RoleList/Role");
-
-                                foreach (XmlNode role in roles)
-                                {
-                                    string virtualmachinename = role.SelectSingleNode("RoleName").InnerText;
-                                    var listItem = new ListViewItem(cloudservicename);
-                                    listItem.SubItems.AddRange(new[] { virtualmachinename });
-                                    lvwVirtualMachines.Items.Add(listItem);
-                                    Application.DoEvents();
-                                }
-                            }
-                        }
-                    }
+                    cloudServiceVMTasks.Add(RetrieveVMsFromCloudService(token, cloudservice));
                 }
+
+                await Task.WhenAll(cloudServiceVMTasks);
 
                 lblStatus.Text = "BUSY: Getting Reserved IPs";
-                Application.DoEvents();
-                XmlDocument reservedips = _asmRetriever.GetAzureASMResources("ReservedIPs", subscriptionid, null, token);
+                XmlDocument reservedips = await _asmRetriever.GetAzureASMResources("ReservedIPs", subscriptionid, null, token);
 
                 // If save selection option is enabled
                 if (app.Default.SaveSelection)
                 {
                     lblStatus.Text = "BUSY: Reading saved selection";
-                    Application.DoEvents();
                     _saveSelectionProvider.Read(Guid.Parse(subscriptionid), ref lvwVirtualNetworks, ref lvwStorageAccounts, ref lvwVirtualMachines);
                 }
 
@@ -193,6 +177,37 @@ namespace MIGAZ
             }
         }
 
+        private async Task RetrieveVMsFromCloudService(string token, XmlNode cloudservice)
+        {
+            string cloudservicename = cloudservice.SelectSingleNode("ServiceName").InnerText;
+            Hashtable cloudserviceinfo = new Hashtable();
+            cloudserviceinfo.Add("name", cloudservicename);
+
+            XmlDocument hostedservice = await _asmRetriever.GetAzureASMResources("CloudService", subscriptionid, cloudserviceinfo, token);
+            if (hostedservice.SelectNodes("//Deployments/Deployment").Count > 0)
+            {
+                if (hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectNodes("RoleType").Count > 0)
+                {
+                    if (hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectSingleNode("RoleType").InnerText == "PersistentVMRole")
+                    {
+
+                        XmlNodeList roles = hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectNodes("RoleList/Role");
+
+                        foreach (XmlNode role in roles)
+                        {
+                            this.Invoke(new MethodInvoker(() =>
+                            {
+                                string virtualmachinename = role.SelectSingleNode("RoleName").InnerText;
+                                lblStatus.Text = "BUSY: Retrieved VM: " + virtualmachinename;
+                                var listItem = new ListViewItem(cloudservicename);
+                                listItem.SubItems.AddRange(new[] { virtualmachinename });
+                                lvwVirtualMachines.Items.Add(listItem);
+                            }));
+                        }
+                    }
+                }
+            }
+        }
 
         private void lvwVirtualNetworks_ItemChecked(object sender, ItemCheckedEventArgs e)
         {
@@ -204,7 +219,7 @@ namespace MIGAZ
             UpdateExportItemsCount();
         }
 
-        private void lvwVirtualMachines_ItemChecked(object sender, ItemCheckedEventArgs e)
+        private async void lvwVirtualMachines_ItemChecked(object sender, ItemCheckedEventArgs e)
         {
             UpdateExportItemsCount();
 
@@ -212,7 +227,7 @@ namespace MIGAZ
             {
                 if (e.Item.Checked)
                 {
-                    AutoSelectDependencies(e);
+                    await AutoSelectDependencies(e);
                 }
             }
         }
@@ -238,7 +253,7 @@ namespace MIGAZ
                 btnExport.Enabled = true;
         }
 
-        private void btnExport_Click(object sender, EventArgs e)
+        private async void btnExport_Click(object sender, EventArgs e)
         {
             btnExport.Enabled = false;
 
@@ -276,7 +291,6 @@ namespace MIGAZ
                 if (app.Default.SaveSelection)
                 {
                     lblStatus.Text = "BUSY: Reading saved selection";
-                    Application.DoEvents();
                     _saveSelectionProvider.Save(Guid.Parse(subscriptionid), lvwVirtualNetworks, lvwStorageAccounts, lvwVirtualMachines);
                 }
 
@@ -287,7 +301,7 @@ namespace MIGAZ
                 var blobDetailWriter = new StreamWriter(blobDetailsPath);
                 try
                 {
-                    var messages = _templateGenerator.GenerateTemplate(subscriptionsAndTenants[subscriptionid], subscriptionid, artefacts, templateWriter, blobDetailWriter);
+                    var messages = await _templateGenerator.GenerateTemplate(subscriptionsAndTenants[subscriptionid], subscriptionid, artefacts, templateWriter, blobDetailWriter);
                     var token = GetToken(subscriptionsAndTenants[subscriptionid], PromptBehavior.Auto);
                     var exportResults = new ExportResults(_asmRetriever, token, messages, subscriptionid, instructionsPath, templatePath, blobDetailsPath);
                     exportResults.ShowDialog(this);
@@ -313,7 +327,7 @@ namespace MIGAZ
 
 
 
-        private void NewVersionAvailable()
+        private async Task NewVersionAvailable()
         {
             HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("https://asmtoarmtoolapi.azurewebsites.net/api/version");
             request.Method = "GET";
@@ -321,7 +335,7 @@ namespace MIGAZ
 
             try
             {
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                HttpWebResponse response = (HttpWebResponse)await request.GetResponseAsync();
                 string result = new StreamReader(response.GetResponseStream()).ReadToEnd();
 
                 string version = "\"" + Assembly.GetEntryAssembly().GetName().Version.ToString() + "\"";
@@ -347,33 +361,30 @@ namespace MIGAZ
         }
 
 
-        private void AutoSelectDependencies (ItemCheckedEventArgs listViewRow)
+        private async Task AutoSelectDependencies (ItemCheckedEventArgs listViewRow)
         {
             string cloudServiceName = listViewRow.Item.ListView.Items[listViewRow.Item.Index].SubItems[0].Text;
             string virtualMachineName = listViewRow.Item.ListView.Items[listViewRow.Item.Index].SubItems[1].Text;
-            string deploymentName = "";
-            string virtualNetworkName = "";
-            string loadBalancerName = "";
 
             // Get Subscription from ComboBox
             var token = GetToken(subscriptionsAndTenants[subscriptionid], PromptBehavior.Auto);
             
             // Get VM details
-            _asmRetriever.GetVMDetails(subscriptionid, cloudServiceName, virtualMachineName, token, out deploymentName, out virtualNetworkName, out loadBalancerName);
+            var vmDetails = await _asmRetriever.GetVMDetails(subscriptionid, cloudServiceName, virtualMachineName, token);
 
             Hashtable virtualmachineinfo = new Hashtable();
             virtualmachineinfo.Add("cloudservicename", cloudServiceName);
-            virtualmachineinfo.Add("deploymentname", deploymentName);
+            virtualmachineinfo.Add("deploymentname", vmDetails.DeploymentName);
             virtualmachineinfo.Add("virtualmachinename", virtualMachineName);
-            virtualmachineinfo.Add("virtualnetworkname", virtualNetworkName);
-            virtualmachineinfo.Add("loadbalancername", loadBalancerName);
+            virtualmachineinfo.Add("virtualnetworkname", vmDetails.VirtualNetworkName);
+            virtualmachineinfo.Add("loadbalancername", vmDetails.LoadBalancerName);
 
-            XmlDocument virtualmachine = _asmRetriever.GetAzureASMResources("VirtualMachine", subscriptionid, virtualmachineinfo, token);
+            XmlDocument virtualmachine = await _asmRetriever.GetAzureASMResources("VirtualMachine", subscriptionid, virtualmachineinfo, token);
 
             // process virtual network
             foreach (ListViewItem virtualNetwork in lvwVirtualNetworks.Items)
             {
-                if (virtualNetwork.Text == virtualNetworkName)
+                if (virtualNetwork.Text == vmDetails.VirtualNetworkName)
                 {
                     lvwVirtualNetworks.Items[virtualNetwork.Index].Checked = true;
                     lvwVirtualNetworks.Items[virtualNetwork.Index].Selected = true;

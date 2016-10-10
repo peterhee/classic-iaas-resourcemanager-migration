@@ -8,6 +8,7 @@ using System.IO;
 using MIGAZ.Models;
 using Newtonsoft.Json.Linq;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace MIGAZ.Tests
 {
@@ -18,7 +19,7 @@ namespace MIGAZ.Tests
     public class VnetTests
     {
         [TestMethod]
-        public void ValidateComplexSingleVnet()
+        public async Task ValidateComplexSingleVnet()
         {
             FakeAsmRetriever fakeAsmRetriever;
             TemplateGenerator templateGenerator;
@@ -30,7 +31,7 @@ namespace MIGAZ.Tests
             var artefacts = new AsmArtefacts();
             artefacts.VirtualNetworks.Add("10.2.0.0");
 
-            templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
+            await templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
 
             JObject templateJson = TestHelper.GetJsonData(templateStream);
 
@@ -64,7 +65,7 @@ namespace MIGAZ.Tests
         }
 
         [TestMethod]
-        public void ValidateSingleVnetWithNsgAndRT()
+        public async Task ValidateSingleVnetWithNsgAndRT()
         {
             FakeAsmRetriever fakeAsmRetriever;
             TemplateGenerator templateGenerator;
@@ -76,7 +77,7 @@ namespace MIGAZ.Tests
             var artefacts = new AsmArtefacts();
             artefacts.VirtualNetworks.Add("asmtest");
 
-            templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
+            await templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
 
             JObject templateJson = TestHelper.GetJsonData(templateStream);
 
@@ -118,7 +119,7 @@ namespace MIGAZ.Tests
         }
 
         [TestMethod]
-        public void ValidateSingleVnetWithExpressRouteGateway()
+        public async Task ValidateSingleVnetWithExpressRouteGateway()
         {
             FakeAsmRetriever fakeAsmRetriever;
             TemplateGenerator templateGenerator;
@@ -130,7 +131,7 @@ namespace MIGAZ.Tests
             var artefacts = new AsmArtefacts();
             artefacts.VirtualNetworks.Add("vnet3");
 
-            var messages = templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
+            var messages = await templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
 
             JObject templateJson = TestHelper.GetJsonData(templateStream);
 
@@ -170,7 +171,7 @@ namespace MIGAZ.Tests
         }
 
         [TestMethod]
-        public void ValidateSingleVnetWithNoSubnetsGetsNewDefaultSubet()
+        public async Task ValidateSingleVnetWithNoSubnetsGetsNewDefaultSubet()
         {
             FakeAsmRetriever fakeAsmRetriever;
             TemplateGenerator templateGenerator;
@@ -182,7 +183,7 @@ namespace MIGAZ.Tests
             var artefacts = new AsmArtefacts();
             artefacts.VirtualNetworks.Add("asmnet");
 
-            var messages = templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
+            var messages = await templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
 
             JObject templateJson = TestHelper.GetJsonData(templateStream);
 

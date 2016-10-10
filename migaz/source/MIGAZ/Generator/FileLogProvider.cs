@@ -5,6 +5,8 @@ namespace MIGAZ.Generator
 {
     class FileLogProvider : ILogProvider
     {
+        private object lockObject = new object();
+
         public FileLogProvider()
         {
 
@@ -12,12 +14,15 @@ namespace MIGAZ.Generator
 
         public void WriteLog(string function, string message)
         {
-            string logfiledir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\MIGAZ";
-            if (!Directory.Exists(logfiledir)) { Directory.CreateDirectory(logfiledir); }
+            lock (lockObject)
+            {
+                string logfiledir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\MIGAZ";
+                if (!Directory.Exists(logfiledir)) { Directory.CreateDirectory(logfiledir); }
 
-            string logfilepath = logfiledir + "\\MIGAZ-" + string.Format("{0:yyyyMMdd}", DateTime.Now) + ".log";
-            string text = DateTime.Now.ToString() + "   " + function + "  " + message + Environment.NewLine;
-            File.AppendAllText(logfilepath, text);
+                string logfilepath = logfiledir + "\\MIGAZ-" + string.Format("{0:yyyyMMdd}", DateTime.Now) + ".log";
+                string text = DateTime.Now.ToString() + "   " + function + "  " + message + Environment.NewLine;
+                File.AppendAllText(logfilepath, text);
+            }
         }
     }
 }

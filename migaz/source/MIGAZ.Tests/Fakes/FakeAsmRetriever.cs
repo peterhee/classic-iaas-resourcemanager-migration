@@ -114,7 +114,7 @@ namespace MIGAZ.Tests.Fakes
             _responses[key] = doc;
         }
 
-        public override XmlDocument GetAzureASMResources(string resourceType, string subscriptionId, Hashtable info, string token)
+        public override async Task<XmlDocument> GetAzureASMResources(string resourceType, string subscriptionId, Hashtable info, string token)
         {
             string key = resourceType + ":" + SerialiseHashTable(resourceType, info);
             var xmlDoc = _responses[key];

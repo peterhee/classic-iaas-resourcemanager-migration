@@ -23,6 +23,8 @@ namespace MIGAZ.Forms
         private string _instructionsPath;
         private AsmRetriever _asmRetriever;
         private string _token;
+        private List<string> _messages;
+        private string _sourceSubscriptionId;
 
         public ExportResults(AsmRetriever asmRetriever, string token, List<string> messages, string sourceSubscriptionId, string instructionsPath, string templatePath, string blobDetailsPath)
         {
@@ -33,28 +35,8 @@ namespace MIGAZ.Forms
             _instructionsPath = instructionsPath;
             _asmRetriever = asmRetriever;
             _token = token;
-
-            // Initialise messages
-            foreach (var message in messages)
-            {
-                txtMessages.Text += message + "\r\n";
-            }
-
-            // Initialise subscriptions
-            Subscription currentSubscription = null;
-            List<Subscription> subscriptions = new List<Subscription>();
-            foreach (XmlNode subscription in asmRetriever.GetAzureASMResources("Subscriptions", null, null, token).SelectNodes("//Subscription"))
-            {
-                var sub = new Subscription { SubscriptionName = subscription.SelectSingleNode("SubscriptionName").InnerText, SubscriptionId = subscription.SelectSingleNode("SubscriptionID").InnerText };
-                subscriptions.Add(sub);
-                if (sub.SubscriptionId == sourceSubscriptionId)
-                {
-                    currentSubscription = sub;
-                }
-            }
-            cboSubscription.DataSource = subscriptions;
-            cboRGLocation.DisplayMember = "SubscriptionName";
-            cboSubscription.SelectedItem = currentSubscription;
+            _messages = messages;
+            _sourceSubscriptionId = sourceSubscriptionId;
         }
 
         private class Subscription
@@ -109,8 +91,30 @@ namespace MIGAZ.Forms
             Process p = Process.Start(pInfo);
         }
 
-        private void ExportResults_Load(object sender, EventArgs e)
+        private async void ExportResults_Load(object sender, EventArgs e)
         {
+            // Initialise messages
+            foreach (var message in _messages)
+            {
+                txtMessages.Text += message + "\r\n";
+            }
+
+            // Initialise subscriptions
+            Subscription currentSubscription = null;
+            List<Subscription> subscriptions = new List<Subscription>();
+            foreach (XmlNode subscription in (await _asmRetriever.GetAzureASMResources("Subscriptions", null, null, _token)).SelectNodes("//Subscription"))
+            {
+                var sub = new Subscription { SubscriptionName = subscription.SelectSingleNode("SubscriptionName").InnerText, SubscriptionId = subscription.SelectSingleNode("SubscriptionID").InnerText };
+                subscriptions.Add(sub);
+                if (sub.SubscriptionId == _sourceSubscriptionId)
+                {
+                    currentSubscription = sub;
+                }
+            }
+            cboSubscription.DataSource = subscriptions;
+            cboRGLocation.DisplayMember = "SubscriptionName";
+            cboSubscription.SelectedItem = currentSubscription;
+
             System.Media.SystemSounds.Asterisk.Play();
         }
 

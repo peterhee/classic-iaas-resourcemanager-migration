@@ -226,6 +226,7 @@
             this.lvwVirtualMachines.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.lvwVirtualMachines.Name = "lvwVirtualMachines";
             this.lvwVirtualMachines.Size = new System.Drawing.Size(670, 610);
+            this.lvwVirtualMachines.Sorting = System.Windows.Forms.SortOrder.Ascending;
             this.lvwVirtualMachines.TabIndex = 4;
             this.lvwVirtualMachines.UseCompatibleStateImageBehavior = false;
             this.lvwVirtualMachines.View = System.Windows.Forms.View.Details;
