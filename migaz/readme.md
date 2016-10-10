@@ -199,6 +199,9 @@ In case of any issues during the deployment of the export.JSON you need to troub
 
 
 ## Release Notes
+### v1.4.9.0
+ - Performance improvements, minor fixes to generated resource names
+ 
 ### v1.4.8.0
  - Fix error when exporting a VM that is in a VNET with no subnets defined
 
