@@ -1,4 +1,8 @@
-﻿[CmdletBinding()]
+﻿<#
+Purpose: Recreate the associated NSGs and rules in a simulated lab virtual network that matches the production virtual network. The vNet is built from the exported network configuration file, and this scripts add NSGs and rules to the vNet. 
+#>
+
+[CmdletBinding()]
 param(
     [Parameter(Mandatory=$True)]
     [ValidateNotNullOrEmpty()]

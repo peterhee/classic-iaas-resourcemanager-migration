@@ -1,4 +1,8 @@
-﻿Param
+﻿<#
+Purpose: Core script to hydrate a test environment from the ASM/Classic metadata extract. Use the CSV to hydrate a simulated ASM environment with the same metadata for running/testing the ARM Migration API.
+#>
+
+Param
 (
     [Parameter(Mandatory=$true)]
 	[string]$SubscriptionId,             # subscriptionID for the test lab to hydrate the test environment
@@ -79,6 +83,7 @@ function Create-VM
     {
         Set-AzureSubscription -SubscriptionId $SubscriptionId -CurrentStorageAccountName $vhdStorageAccount
 
+        Write-Host "setting os image"        
         if ($os -eq "Windows")
         {
             if ($customImageName -ne "")
@@ -88,19 +93,18 @@ function Create-VM
             }
             else
             {
-                $customImage = @()
-                $customImage = Get-AzureVMImage | where { $_.ImageFamily -eq “Windows Server 2012 R2 Datacenter” }
-                $azureImageName = $customImage.ImageName[$customImage.Count - 1]
+                $family="Windows Server 2012 R2 Datacenter"
+                $azureImageName = Get-AzureVMImage | where { $_.ImageFamily -eq $family } | sort PublishedDate -Descending | select -ExpandProperty ImageName -First 1
             }
         }
         else
         {
-            $customImage = @()
-            $customImage = Get-AzureVMImage | where { $_.ImageFamily -eq “Ubuntu Server 15.10” }
-            $azureImageName = $customImage.ImageName[$customImage.Count - 1]
+            $family="Ubuntu Server"
+            $azureImageName = Get-AzureVMImage | where { $_.ImageFamily -eq $family } | sort PublishedDate -Descending | select -ExpandProperty ImageName -First 1
         }  
 
         $VMConfig = $null
+        Write-Host "Creating VM Config"
         $VMConfig = New-AzureVMConfig -Name $vmName -InstanceSize $instanceSize -ImageName $azureImageName
 
         if ($os -eq "Windows")
@@ -126,6 +130,7 @@ function Create-VM
             #}
         }
     
+        Write-Host "Setting subnets"
         if (($primaryNICSubnetName -ne $secondaryNICSubnetName) -and ($secondaryNICSubnetName -ne ""))
         {
             Set-AzureSubnet -SubnetNames $primaryNICSubnetName,$secondaryNICSubnetName  -VM $VMConfig
@@ -135,6 +140,7 @@ function Create-VM
             Set-AzureSubnet -SubnetNames $primaryNICSubnetName -VM $VMConfig
         }
     
+        Write-Host "building networking config"
         $secondaryNicArray = @();
         if ($secondaryNICs -ne "")
         {
@@ -142,42 +148,50 @@ function Create-VM
             $i = 2;
             foreach ($nic in $secondaryNicArray)
             {
-                Add-AzureNetworkInterfaceConfig -Name $("Ethernet" + $i) -SubnetName $secondaryNICSubnetName -StaticVNetIPAddress $nic -VM $VMConfig
+                Add-AzureNetworkInterfaceConfig -Name $("Ethernet" + $i) -SubnetName $secondaryNICSubnetName -VM $VMConfig
+				# UNCOMMENT below for static IPs
+				#Add-AzureNetworkInterfaceConfig -Name $("Ethernet" + $i) -SubnetName $secondaryNICSubnetName -StaticVNetIPAddress $nic -VM $VMConfig
                 $i = $i + 1
             }
         }
 
-        # Default interface
-        if ($primaryNICIP -ne "")
-        {
-            Set-AzureStaticVNetIP -IPAddress $primaryNICIP -VM $VMConfig
-        }
+        # UNCOMMENT below if you want static IPs
+        # Default NIC
+		<#
+	    if ($primaryNICIP -ne "")
+	    {
+	        Set-AzureStaticVNetIP -IPAddress $primaryNICIP -VM $VMConfig
+	    }#>
        
-        # TODO: add parameters for CustomScriptExtension -- remove hardcoding
-        if (($secondaryNICs -ne "") -and ($os -eq "Windows"))
-        {
-            $VMConfig = Set-AzureVMCustomScriptExtension -VM $VMConfig -ContainerName 'scripts' -FileName 'DefaultRouteAdd.ps1' -StorageAccountName "aclimages"
-        }
+	   
+        #Write-Host "Adding custom extensions"
+        #if (($secondaryNICs -ne "") -and ($os -eq "Windows"))
+        #{
+        #    $VMConfig = Set-AzureVMCustomScriptExtension -VM $VMConfig -ContainerName 'scripts' -FileName 'DefaultRouteAdd.ps1' -StorageAccountName "aclimages"
+        #}
 
-        $dataDisksArray = @();
-        if ($dataDisks -ne "")
+        Write-Host "adding data disks"
+        if ($datadisks -ne "")
         {
-            $dataDisksArray = $dataDisks.Split('|')
             $i = 0;
-            foreach ($disk in $dataDisksArray)
+            
+            Write-Host "Number of data disks to create: $datadisks"
+            while ($i -lt [int]$datadisks)
             {
+                Write-Host "Creating data disk: $i"
                 Add-AzureDataDisk -CreateNew -DiskSizeInGB 100 -DiskLabel $("DataDisk" + $i) -LUN $i -VM $VMConfig
                 $i = $i + 1
             }     
         }
 
+        Write-Host "adding availability sets"
         if ($availset -ne "")
         {
             Set-AzureAvailabilitySet -AvailabilitySetName $availset -VM $VMConfig
         }
 
-        Write-Host "Disabling boot diagnostics"
-        Set-AzureBootDiagnostics -Disable -VM $VMConfig
+        #Write-Host "Disabling boot diagnostics"
+        #Set-AzureBootDiagnostics -Disable -VM $VMConfig
 
         Write-Host "Creating VM"
         $AzureVM = New-AzureVM -ServiceName $serviceName -VM $VMConfig -VNetName $vnetName -Location $deploymentLocation -WaitForBoot

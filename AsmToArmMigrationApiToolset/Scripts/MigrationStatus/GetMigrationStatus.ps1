@@ -1,29 +1,46 @@
 ﻿
-
 <#
  
-.SYNOPSIS
+Purpose: Retrieves the status of an actual ARM migration using the Migration API Move-AzureVirtualNetwork cmdlet.  This will show each cloud service as its being prepared and committed to ARM.
 This is a helper Script that can make REST API calls for and pull back metadata for all production deployments in a subscription
 
-One parameter -- subscription ID
+Two parameters 
+    -- subscription ID
+    -- CSV from metadata extract
 
 Sample Command:
 
-.\MetadataExtract.ps1 -subscriptionID 98f9a3cd-a241-4ad0-9057-8d8cff55ca1f -cloudServiceName mycloudservice
+.\MetadataExtract.ps1 -subscriptionID 98f9a3cd-a241-4ad0-9057-8d8cff55ca1f
  
 #>
 
 [CmdletBinding()]
-param(
-    [Parameter(Mandatory=$True)]
-    [ValidateNotNullOrEmpty()]
-    $subscriptionID
+Param
+(
+    [Parameter(Mandatory=$true)]         # subscription id
+    [string]$SubscriptionID,
+    [Parameter(Mandatory=$true)]         # csv containing the services to check migration status
+    [string]$Csv    
 )
 
 Select-AzureSubscription -SubscriptionId $subscriptionID
 $subscription = Get-AzureSubscription -SubscriptionId $subscriptionID
-Write-Host "Selecting the cloud services within the subscription" 
-$services = Get-AzureService # | Where-Object {$_.ServiceName.StartsWith("z")}  # TODO: Modify this as needed to filter the cloud servics being migrated
+
+Write-Host "Importing csv"
+$csvItems = Import-Csv $Csv -ErrorAction Stop
+
+$csList = @{}
+foreach ($item in $csvItems)
+{
+    if (!$csList.ContainsKey($item.csname))
+    {
+        $csList.Add($item.csname, $item.csname)
+    }
+}
+
+#Write-Host "Selecting the cloud services within the subscription" 
+#$services = Get-AzureService  #| Where-Object {$_.ServiceName.StartsWith("b")}  
+
 
 if ($subscription) {
     if($ARMTenantAccessTokensARM.count -eq 0) {
@@ -38,7 +55,7 @@ if ($subscription) {
         }
         $token = ''
         $token = 'Bearer ' + $Global:accessToken
-        $uri = "https://management.core.windows.net/" + $subscription.SubscriptionId +"/services/hostedservices/" + $services[0].ServiceName + "/deploymentslots/Production"
+        $uri = "https://management.core.windows.net/" + $subscription.SubscriptionId +"/services/hostedservices/" + $csList[0] + "/deploymentslots/Production"
         $header = @{"x-ms-version" = "2015-10-01";"Authorization" = $token}
         $xml = try {Invoke-RestMethod -Uri $uri -Method Get -Headers $header} catch {$_.exception.response}
         if($xml.StatusCode -eq 'Unauthorized') {Connect-ARM}
@@ -67,16 +84,17 @@ $token = 'Bearer ' + $Global:accessToken
 
 Write-Host "Now walking through each cloud service deployment and retrieving its metadata"
 
-foreach ($svc in $services)
+
+foreach ($svc in $csList.Keys)
 {
-    $uri = "https://management.core.windows.net/" + $subscription.SubscriptionId +"/services/hostedservices/" + $svc.ServiceName + "/deploymentslots/Production"
+    $uri = "https://management.core.windows.net/" + $subscription.SubscriptionId +"/services/hostedservices/" + $svc + "/deploymentslots/Production"
     $header = @{"x-ms-version" = "2015-10-01";"Authorization" = $token}
 
     $xml = try {Invoke-RestMethod -Uri $uri -Method Get -Headers $header} catch {$_.exception.response}
 
     if($xml.StatusCode -eq 'NotFound') 
     {
-        write-host -ForegroundColor Yellow ("Status Code for GET Cloud Service: " + $svc.ServiceName + " : Status :" +  $xml.StatusCode)
+        write-host -ForegroundColor Yellow ("Status Code for GET Cloud Service: " + $svc + "  Status: " +  $xml.StatusCode)
     }
     else
     {
@@ -88,27 +106,27 @@ foreach ($svc in $services)
         {
             if ($xml.Deployment.RoleList.Role.MigrationState -eq "Prepared")
             {
-                Write-Host -ForegroundColor Green "Migration State for" $svc.ServiceName ":" $xml.Deployment.RoleList.Role.MigrationState
+                Write-Host -ForegroundColor Green "Migration State for" $svc ":" $xml.Deployment.RoleList.Role.MigrationState
             }
             elseif ($xml.Deployment.RoleList.Role.MigrationState -eq "Preparing")
             {
-                Write-Host -ForegroundColor Yellow "Migration State for" $svc.ServiceName ":" $xml.Deployment.RoleList.Role.MigrationState
+                Write-Host -ForegroundColor Yellow "Migration State for" $svc ":" $xml.Deployment.RoleList.Role.MigrationState
             }
             elseif ($xml.Deployment.RoleList.Role.MigrationState -eq "Committing")
             {
-                Write-Host -ForegroundColor Magenta "Migration State for" $svc.ServiceName ":" $xml.Deployment.RoleList.Role.MigrationState
+                Write-Host -ForegroundColor Magenta "Migration State for" $svc ":" $xml.Deployment.RoleList.Role.MigrationState
             }
             elseif ($xml.Deployment.RoleList.Role.MigrationState -eq "Committed")
             {
-                Write-Host -ForegroundColor Cyan "Migration State for" $svc.ServiceName ":" $xml.Deployment.RoleList.Role.MigrationState
+                Write-Host -ForegroundColor Cyan "Migration State for" $svc ":" $xml.Deployment.RoleList.Role.MigrationState
             }
             else
             {
-                Write-Host -ForegroundColor Red "Migration State for" $svc.ServiceName ":" $xml.Deployment.RoleList.Role.MigrationState
+                Write-Host -ForegroundColor Red "Migration State for" $svc ":" $xml.Deployment.RoleList.Role.MigrationState
             }
         }
         else{
-            Write-Host -ForegroundColor Yellow "Migration State for" $svc.ServiceName ": NotPrepared"
+            Write-Host -ForegroundColor Yellow "Migration State for" $svc ": NotPrepared"
         }
     }
     else
@@ -118,5 +136,6 @@ foreach ($svc in $services)
 }
 
 Write-Host "Completed" -ForegroundColor Green
+
 
 

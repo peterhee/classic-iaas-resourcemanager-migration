@@ -1,4 +1,8 @@
-﻿[CmdletBinding()]
+﻿<#
+Purpose: Extract the Network Security Groups and rules for an ASM virtual network.
+#>
+
+[CmdletBinding()]
 param(
     [Parameter(Mandatory=$True)]
     [ValidateNotNullOrEmpty()]
