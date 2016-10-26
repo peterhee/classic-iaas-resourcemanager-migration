@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <br />
 
 # Microsoft Platform Supported <br /> Azure Classic to Azure Resource Manager Migration:
@@ -290,38 +289,38 @@ To use the utility, just run &#34;**asmmetadataparser.exe vnetName xmlFile**&#34
 
 - List of each field in the metadata generated CSV
 
-   \* **vmname** -- name of the VM
-   \* **csname** -- name of the cloud service
-   \* **cscleanup** -- there is two or more defined availability sets in the cloud service. If any cell is true, the availability set will need to be remediated.
-   \* **availset** -- the name of the availabilityset
-   \* **mixedmodeas** -- there are both VMs in an availability set and VMs not in an AS in the cloud service. If any of cell is true, the availability set will need to be remediated.
-   \* **lbendpointname** -- load balancer endpoint name
-   \* **lbport** -- load balancer port
-   \* **lbvip** -- load balancer IP
-   \* **lbtype** -- type of load balancer -- options are &#34;external&#34; or &quot;internal&quot;
-   \* **size** -- VM size
-   \* **agent** -- is an azure agent configured?
-   \* **running** -- is the VM running or stopped? Options are &#34;started&#34; or &#34;stopped&#34;
-   \* **status** -- status of the instance -- readyrole, stoppeddeallocated, rolestateunknown, provisioningtimedout
-   \* **osdisktype** -- type of osdisk: standard or premium
-   \* **datadisks** -- the number of datadisks on the VM
-   \* **datadiskstype** -- the type of the data disks -- standard or premium
-   \* **os** -- either windows or linux
-   \* **ip** -- IP address of the primary NIC
-   \* **subnet** -- subnet of the primary NIC
-   \* **secondarynics** -- secondary NICs IP addresses, separated by a &#39;|&#39; char
-   \* **secondarysubnet** -- secondary NICs subnet -- all must be the same
-   \* **mixedmodenics** -- true if there are both single NIC and multi-MIC VMs in the same cloud service -- which isn&#39;t allowed in ARM. If any cell is true, the VM will need to be remediated.
-   \* **extensions** – list of VM extensions installed on the VM outside of BGInfo
-   \* **osdiskname** -- the registered OS disk name
-   \* **datadisknames** -- the registered data disk names separated by a &#39;|&#39; char
-   \* **osdiskstorageaccount** -- the storage account that holds the OS disk
-   \* **newstorageaccount** -- used only for the optional storage account balancing script. The new V2 SA.
-   \* **newsaresourcegroup** -- used only for the optional storage account balancing script. The new V2 SA resource group.
-   \* **osdiskvhd** -- URL to the OS disk VHD
-   \* **datadiskvhds** -- URL to the data disk VHDs separated by a &#39;|&#39; char, in the same order as datadisknames
-   \* **endpoints** -- contains all the configured endpoint data for the VM
-   \* **reservedip** -- does the deployment/cloudservice have a reserved IP
+   -vmname -- name of the VM
+   -csname -- name of the cloud service
+   -cscleanup -- there is two or more defined availability sets in the cloud service. If any cell is true, the availability set will need to be remediated.
+   -availset -- the name of the availabilityset
+   -mixedmodeas -- there are both VMs in an availability set and VMs not in an AS in the cloud service. If any of cell is true, the availability set will need to be remediated.
+   -lbendpointname -- load balancer endpoint name
+   -lbport -- load balancer port
+   -lbvip -- load balancer IP
+   -lbtype -- type of load balancer -- options are &#34;external&#34; or &quot;internal&quot;
+   -size -- VM size
+   -agent -- is an azure agent configured?
+   -running -- is the VM running or stopped? Options are &#34;started&#34; or &#34;stopped&#34;
+   -status -- status of the instance -- readyrole, stoppeddeallocated, rolestateunknown, provisioningtimedout
+   -osdisktype -- type of osdisk: standard or premium
+   -datadisks -- the number of datadisks on the VM
+   -datadiskstype -- the type of the data disks -- standard or premium
+   -os -- either windows or linux
+   -ip -- IP address of the primary NIC
+   -subnet -- subnet of the primary NIC
+   -secondarynics -- secondary NICs IP addresses, separated by a &#39;|&#39; char
+   -secondarysubnet -- secondary NICs subnet -- all must be the same
+   -mixedmodenics -- true if there are both single NIC and multi-MIC VMs in the same cloud service -- which isn&#39;t allowed in ARM. If any cell is true, the VM will need to be remediated.
+   -extensions -- list of VM extensions installed on the VM outside of BGInfo
+   -osdiskname -- the registered OS disk name
+   -datadisknames -- the registered data disk names separated by a &#39;|&#39; char
+   -osdiskstorageaccount -- the storage account that holds the OS disk
+   -newstorageaccount -- used only for the optional storage account balancing script. The new V2 SA.
+   -newsaresourcegroup -- used only for the optional storage account balancing script. The new V2 SA resource group.
+   -osdiskvhd -- URL to the OS disk VHD
+   -datadiskvhds -- URL to the data disk VHDs separated by a &#39;|&#39; char, in the same order as datadisknames
+   -endpoints -- contains all the configured endpoint data for the VM
+   -reservedip -- does the deployment/cloudservice have a reserved IP
 
 ### HydrateNSG
 
@@ -444,4 +443,3 @@ To tune this script, look in the source for the TODO comment and modify the scri
 Other Scripts
 After migrating a vNet to ARM, a bunch of VMs are now running that need to be validated then deleted. A useful script called DeleteResourceGroups.ps1 is included that calls the REST api asynchronously to delete each migrated ARM resource group. The script needs to be tweaked for each usage.  Look at the source.
 A few other scripts are included for deleting the hydrated ASM test lab (if it isn’t migrated to ARM), and/or shutdown a test lab.
->>>>>>> origin/master
