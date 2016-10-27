@@ -144,7 +144,7 @@ The following is a list of the core tools contained in this toolset. Details on 
 
 - **MetadataExtract.ps1**: Extract the deployment metadata from a production Azure subscription running Classic virtual networks. Output is a single XML file listing out each Cloud Service deployment from the vNet being migrated.
 - **NSG-Bindings.ps1**: Extract the Network Security Groups and rules for a Classic virtual network.
-- **AsmMetadataParser.exe**: Parse the metadata from MetadataExtract.ps1 and build a flattened CSV and a compatibility report. This CSV is key to both preparing/validating migration readiness, but also as input to many of the included scripts.
+- **AsmMetadataParser.exe**: Parse the metadata from **MetadataExtract.ps1** and build a flattened CSV and a compatibility report. This CSV is key to both preparing/validating migration readiness, but also as input to many of the included scripts.
 - **HydrateNSG.ps1**: Recreate the associated NSGs and rules in a simulated lab virtual network that matches the production virtual network. The vNet is built from the exported network configuration file, and this script adds NSGs and rules to the vNet.
 - **HydrateLab.ps1**: Use the CSV to hydrate a simulated Classic environment with the same metadata for running/testing the Platform supported Migration API.
 - **MoveErConnectedVnet.ps1**: Well-tested/reviewed script to do the actual migration of an ExpressRoute connected vNet to Azure RM.  The script disconnects the vNet from one or two ER circuits, removes the gateway, prepares the migration, commits the migration, and then reconnects to the one or two ER circuits. Designed to handle more than one linked ER circuit. Script will also handle expected migration API transient errors that can be safely retried. Lots of error handling and logging. When an error occurs during prepare/commit, the script will not terminate, but rather allow for prepare/commit retries.
@@ -288,38 +288,38 @@ To use the utility, just run &#34;**asmmetadataparser.exe vnetName xmlFile**&#34
 
 - List of each field in the metadata generated CSV
 
-   *vmname* -- name of the VM
-   *csname* -- name of the cloud service
-   *cscleanup* -- there is two or more defined availability sets in the cloud service. If any cell is true, the availability set will need to be remediated.
-   *availset* -- the name of the availabilityset
-   *mixedmodeas* -- there are both VMs in an availability set and VMs not in an AS in the cloud service. If any of cell is true, the availability set will need to be remediated.
-   *lbendpointname* -- load balancer endpoint name
-   *lbport* -- load balancer port
-   *lbvip* -- load balancer IP
-   *lbtype* -- type of load balancer -- options are &#34;external&#34; or &quot;internal&quot;
-   *size* -- VM size
-   *agent* -- is an azure agent configured?
-   *running* -- is the VM running or stopped? Options are &#34;started&#34; or &#34;stopped&#34;
-   *status* -- status of the instance -- readyrole, stoppeddeallocated, rolestateunknown, provisioningtimedout
-   *osdisktype* -- type of osdisk: standard or premium
-   *datadisks* -- the number of datadisks on the VM
-   *datadiskstype* -- the type of the data disks -- standard or premium
-   *os* -- either windows or linux
-   *ip* -- IP address of the primary NIC
-   *subnet* -- subnet of the primary NIC
-   *secondarynics* -- secondary NICs IP addresses, separated by a &#39;|&#39; char
-   *secondarysubnet* -- secondary NICs subnet -- all must be the same
-   *mixedmodenics* -- true if there are both single NIC and multi-MIC VMs in the same cloud service -- which isn&#39;t allowed in ARM. If any cell is true, the VM will need to be remediated.
-   *extensions* – list of VM extensions installed on the VM outside of BGInfo
-   *osdiskname* -- the registered OS disk name
-   *datadisknames* -- the registered data disk names separated by a &#39;|&#39; char
-   *osdiskstorageaccount* -- the storage account that holds the OS disk
-   *newstorageaccount* -- used only for the optional storage account balancing script. The new V2 SA.
-   *newsaresourcegroup* -- used only for the optional storage account balancing script. The new V2 SA resource group.
-   *osdiskvhd* -- URL to the OS disk VHD
-   *datadiskvhds* -- URL to the data disk VHDs separated by a &#39;|&#39; char, in the same order as datadisknames
-   *endpoints* -- contains all the configured endpoint data for the VM
-   *reservedip* -- does the deployment/cloudservice have a reserved IP
+- **vmname**: name of the VM
+- **csname**: name of the cloud service
+- **cscleanup**: there is two or more defined availability sets in the cloud service. If any cell is true, the availability set will need to be remediated.
+- **availset**: the name of the availabilityset
+- **mixedmodeas**: there are both VMs in an availability set and VMs not in an AS in the cloud service. If any of cell is true, the availability set will need to be remediated.
+- **lbendpointname**: load balancer endpoint name
+- **lbport**: load balancer port
+- **lbvip**: load balancer IP
+- **lbtype**: type of load balancer -- options are &#34;external&#34; or &quot;internal&quot;
+- **size**: VM size
+- **agent**: is an azure agent configured?
+- **running**: is the VM running or stopped? Options are &#34;started&#34; or &#34;stopped&#34;
+- **status**: status of the instance -- readyrole, stoppeddeallocated, rolestateunknown, provisioningtimedout
+- **osdisktype**: type of osdisk: standard or premium
+- **datadisks**: the number of datadisks on the VM
+- **datadiskstype**: the type of the data disks -- standard or premium
+- **os**: either windows or linux
+- **ip**: IP address of the primary NIC
+- **subnet**: subnet of the primary NIC
+- **secondarynics**: secondary NICs IP addresses, separated by a &#39;|&#39; char
+- **secondarysubnet**: secondary NICs subnet -- all must be the same
+- **mixedmodenics**: true if there are both single NIC and multi-MIC VMs in the same cloud service -- which isn&#39;t allowed in ARM. If any cell is true, the VM will need to be remediated.
+- **extensions**: list of VM extensions installed on the VM outside of BGInfo
+- **osdiskname**: the registered OS disk name
+- **datadisknames**: the registered data disk names separated by a &#39;|&#39; char
+- **osdiskstorageaccount**: the storage account that holds the OS disk
+- **newstorageaccount**: used only for the optional storage account balancing script. The new V2 SA.
+- **newsaresourcegroup**: used only for the optional storage account balancing script. The new V2 SA resource group.
+- **osdiskvhd**: URL to the OS disk VHD
+- **datadiskvhds**: URL to the data disk VHDs separated by a &#39;|&#39; char, in the same order as datadisknames
+- **endpoints**: contains all the configured endpoint data for the VM
+- **reservedip**: does the deployment/cloudservice have a reserved IP
 
 ### HydrateNSG
 
@@ -345,12 +345,11 @@ To tune this script, look in the source for the TODO comment and modify the scri
 After migrating a vNet to Azure RM, a bunch of VMs are now running that need to be validated, then deleted. A useful script called **DeleteResourceGroups.ps1** is included that calls the REST API asynchronously to delete each migrated Azure RM resource group. The script needs to be tweaked for each usage.  Look at the source.
 
 A number of other scripts are included as described below.
-|[]() |     |
-| --- | --- |
-| **RemoveExtensions.ps1** | Very important script for pre-migration. This script will walk through and remove all VM extensions from the VMs in the vNet being migrated. This is a key preparation step as noted above. |
-| **AddExtensions.ps1** | Script to add the extensions back after migrating to Azure RM. Additions will need to be made to this script for extensions to be added back. |
-| **DisconnectV1ER.ps1** **ReconnectArmER.ps1** | Scripts to disconnect a V1 ER circuit from the vNet, and reconnect the vNet back to ER. Useful scripts if there is a desire to separate the ExpressRoute functionality from the actual Azure RM migration. |
-| **DryRunNoER.ps1** | Very useful script to dry run test an actual vNet that is planned for migration. No disconnection from ER or VPN is required. Simply prepare and abort a migration to flush out issues, as discussed above. |
-| **PostMigrationValidateStaticIPs.ps1** **PostMigrationValidation.ps1** | Scripts to help validate the metadata post Azure RM migration. These scripts will use the metadata captured in the Classic CSV and compare it to the post migration Azure RM metadata. |
-| **CleanupLabStorage.ps1** | Will quickly walk through and remove all of the migrated test lab VHDs from the storage accounts in the lab subscription.  WARNING: Be careful to not remove items from storage accounts that you want to retain. |
-| **ShutdownLab.ps1** **CleanupLabASM.ps1** **CleanupLabArmAsync.ps1** **CleanupLabArmSync.ps1** | Useful scripts to shut down and clean-up a test lab. **CleanupLabArmAsync.ps1** is particularly interesting to quickly fire a REST delete call against all the newly migrated resource groups without waiting. WARNING: Be careful to not remove VMs that are not part of the lab testing. |
+
+- **RemoveExtensions.ps1**: Very important script for pre-migration. This script will walk through and remove all VM extensions from the VMs in the vNet being migrated. This is a key preparation step as noted above.
+- **AddExtensions.ps1**: Script to add the extensions back after migrating to Azure RM. Additions will need to be made to this script for extensions to be added back.
+- **DisconnectV1ER.ps1** **ReconnectArmER.ps1**: Scripts to disconnect a V1 ER circuit from the vNet, and reconnect the vNet back to ER. Useful scripts if there is a desire to separate the ExpressRoute functionality from the actual Azure RM migration.
+- **DryRunNoER.ps1**: Very useful script to dry run test an actual vNet that is planned for migration. No disconnection from ER or VPN is required. Simply prepare and abort a migration to flush out issues, as discussed above.
+- **PostMigrationValidateStaticIPs.ps1** **PostMigrationValidation.ps1**: Scripts to help validate the metadata post Azure RM migration. These scripts will use the metadata captured in the Classic CSV and compare it to the post migration Azure RM metadata.
+- **CleanupLabStorage.ps1**: Will quickly walk through and remove all of the migrated test lab VHDs from the storage accounts in the lab subscription.  WARNING: Be careful to not remove items from storage accounts that you want to retain.
+- **ShutdownLab.ps1** **CleanupLabASM.ps1** **CleanupLabArmAsync.ps1** **CleanupLabArmSync.ps1**: Useful scripts to shut down and clean-up a test lab. **CleanupLabArmAsync.ps1** is particularly interesting to quickly fire a REST delete call against all the newly migrated resource groups without waiting. WARNING: Be careful to not remove VMs that are not part of the lab testing.
