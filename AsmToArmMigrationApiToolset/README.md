@@ -286,7 +286,7 @@ Run this utility app to parse through the XML and extract the import data to a C
 
 To use the utility, just run &#34;**asmmetadataparser.exe vnetName xmlFile**&#34; from a command window, where vNetName is the name of the vNet being migrated, and xmlFile is the path and filename generated from **MetadataExtract.ps1**.  The app will output two files: the CSV, and also a compatibility report text file. The report will list out some potential problem areas that will need to be resolved before Azure RM migration (look at the report for web/worker role existence). The following list are typical compatibility problems that the parser will identify.
 
-- List of each field in the metadata generated CSV
+List of each field in the metadata generated CSV
 
 - **vmname**: name of the VM
 - **csname**: name of the cloud service
@@ -348,8 +348,8 @@ A number of other scripts are included as described below.
 
 - **RemoveExtensions.ps1**: Very important script for pre-migration. This script will walk through and remove all VM extensions from the VMs in the vNet being migrated. This is a key preparation step as noted above.
 - **AddExtensions.ps1**: Script to add the extensions back after migrating to Azure RM. Additions will need to be made to this script for extensions to be added back.
-- **DisconnectV1ER.ps1** **ReconnectArmER.ps1**: Scripts to disconnect a V1 ER circuit from the vNet, and reconnect the vNet back to ER. Useful scripts if there is a desire to separate the ExpressRoute functionality from the actual Azure RM migration.
+- **DisconnectV1ER.ps1**, **ReconnectArmER.ps1**: Scripts to disconnect a V1 ER circuit from the vNet, and reconnect the vNet back to ER. Useful scripts if there is a desire to separate the ExpressRoute functionality from the actual Azure RM migration.
 - **DryRunNoER.ps1**: Very useful script to dry run test an actual vNet that is planned for migration. No disconnection from ER or VPN is required. Simply prepare and abort a migration to flush out issues, as discussed above.
-- **PostMigrationValidateStaticIPs.ps1** **PostMigrationValidation.ps1**: Scripts to help validate the metadata post Azure RM migration. These scripts will use the metadata captured in the Classic CSV and compare it to the post migration Azure RM metadata.
+- **PostMigrationValidateStaticIPs.ps1**, **PostMigrationValidation.ps1**: Scripts to help validate the metadata post Azure RM migration. These scripts will use the metadata captured in the Classic CSV and compare it to the post migration Azure RM metadata.
 - **CleanupLabStorage.ps1**: Will quickly walk through and remove all of the migrated test lab VHDs from the storage accounts in the lab subscription.  WARNING: Be careful to not remove items from storage accounts that you want to retain.
-- **ShutdownLab.ps1** **CleanupLabASM.ps1** **CleanupLabArmAsync.ps1** **CleanupLabArmSync.ps1**: Useful scripts to shut down and clean-up a test lab. **CleanupLabArmAsync.ps1** is particularly interesting to quickly fire a REST delete call against all the newly migrated resource groups without waiting. WARNING: Be careful to not remove VMs that are not part of the lab testing.
+- **ShutdownLab.ps1**, **CleanupLabASM.ps1**, **CleanupLabArmAsync.ps1**, **CleanupLabArmSync.ps1**: Useful scripts to shut down and clean-up a test lab. **CleanupLabArmAsync.ps1** is particularly interesting to quickly fire a REST delete call against all the newly migrated resource groups without waiting. WARNING: Be careful to not remove VMs that are not part of the lab testing.
