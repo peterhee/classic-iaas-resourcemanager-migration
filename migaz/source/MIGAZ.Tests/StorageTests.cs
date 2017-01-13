@@ -8,6 +8,7 @@ using System.Xml;
 using System.Collections;
 using Newtonsoft.Json.Linq;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace MIGAZ.Tests
 {
@@ -15,7 +16,7 @@ namespace MIGAZ.Tests
     public class StorageTests
     {
         [TestMethod]
-        public void ValidateSingleStorageAccount()
+        public async Task ValidateSingleStorageAccount()
         {
             FakeAsmRetriever fakeAsmRetriever;
             TemplateGenerator templateGenerator;
@@ -27,7 +28,7 @@ namespace MIGAZ.Tests
             var artefacts = new AsmArtefacts();
             artefacts.StorageAccounts.Add("mystorage");
 
-            templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
+            await templateGenerator.GenerateTemplate(TestHelper.TenantId, TestHelper.SubscriptionId, artefacts, new StreamWriter(templateStream), new StreamWriter(blobDetailStream));
 
             JObject templateJson = TestHelper.GetJsonData(templateStream);
             Assert.AreEqual(1, templateJson["resources"].Children().Count());

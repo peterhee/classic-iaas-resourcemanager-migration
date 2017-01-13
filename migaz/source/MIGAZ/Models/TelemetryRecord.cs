@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MIGAZ.Models
 {
@@ -12,5 +9,7 @@ namespace MIGAZ.Models
         public string TenantId;
         public System.Guid SubscriptionId;
         public Dictionary<string, string> ProcessedResources;
+        public string OfferCategories;
+        public string SourceVersion;
     }
 }

@@ -8,6 +8,6 @@ namespace MIGAZ.Generator
 {
     public interface ITelemetryProvider
     {
-        void PostTelemetryRecord(string tenantId, string subscriptionId, Dictionary<string, string> processedItems);
+        void PostTelemetryRecord(string tenantId, string subscriptionId, Dictionary<string, string> processedItems, string offercategories);
     }
 }

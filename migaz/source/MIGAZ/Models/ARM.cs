@@ -4,6 +4,24 @@ using System;
 
 namespace MIGAZ.Models.ARM
 {
+    public class Extension : Resource
+    {
+        public Extension()
+        {
+            type = "extensions";
+            apiVersion = "2015-06-15";
+        }
+    }
+
+    public class Extension_Properties
+    {
+        public string publisher;
+        public string type;
+        public string typeHandlerVersion;
+        public bool autoUpgradeMinorVersion;
+        public Dictionary<string, string> settings;
+    }
+
     public class VirtualNetworkGateway : Resource
     {
         public VirtualNetworkGateway()
@@ -58,6 +76,7 @@ namespace MIGAZ.Models.ARM
         public Reference virtualNetworkGateway1;
         public Reference localNetworkGateway2;
         public string connectionType;
+        public Reference peer;
         public long routingWeight = 10;
         public string sharedKey;
     }

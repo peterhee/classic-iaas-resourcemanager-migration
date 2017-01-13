@@ -121,5 +121,29 @@ namespace MIGAZ {
                 this["AzureEnvironment"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool AutoSelectDependencies {
+            get {
+                return ((bool)(this["AutoSelectDependencies"]));
+            }
+            set {
+                this["AutoSelectDependencies"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool SaveSelection {
+            get {
+                return ((bool)(this["SaveSelection"]));
+            }
+            set {
+                this["SaveSelection"] = value;
+            }
+        }
     }
 }

@@ -1,14 +1,10 @@
-﻿using Microsoft.IdentityModel.Clients.ActiveDirectory;
-using MIGAZ.Models;
+﻿using MIGAZ.Models;
 using MIGAZ.Models.ARM;
 using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 
@@ -21,30 +17,36 @@ namespace MIGAZ.Generator
         private ITelemetryProvider _telemetryProvider;
         private ITokenProvider _tokenProvider;
         private AsmRetriever _asmRetriever;
+        private ISettingsProvider _settingsProvider;
         private List<Resource> _resources;
         private Dictionary<string, Parameter> _parameters;
         private List<CopyBlobDetail> _copyBlobDetails;
         private Dictionary<string, string> _processedItems;
+        public Dictionary<string, string> _storageAccountNames;
+        private List<string> _messages;
 
-        public TemplateGenerator(ILogProvider logProvider, IStatusProvider statusProvider, ITelemetryProvider telemetryProvider, ITokenProvider tokenProvider, AsmRetriever asmRetriever)
+        public TemplateGenerator(ILogProvider logProvider, IStatusProvider statusProvider, ITelemetryProvider telemetryProvider, 
+            ITokenProvider tokenProvider, AsmRetriever asmRetriever, ISettingsProvider settingsProvider)
         {
             _logProvider = logProvider;
             _statusProvider = statusProvider;
             _telemetryProvider = telemetryProvider;
             _tokenProvider = tokenProvider;
             _asmRetriever = asmRetriever;
+            _settingsProvider = settingsProvider;
         }
-        public void GenerateTemplate(string tenantId, string subscriptionId, AsmArtefacts artefacts, StreamWriter templateWriter, StreamWriter blobDetailWriter)
+        public async Task<List<string>> GenerateTemplate(string tenantId, string subscriptionId, AsmArtefacts artefacts, StreamWriter templateWriter, StreamWriter blobDetailWriter)
         {
             _logProvider.WriteLog("GenerateTemplate", "Start");
 
-            app.Default.ExecutionId = Guid.NewGuid().ToString();
+            _settingsProvider.ExecutionId = Guid.NewGuid().ToString();
             _resources = new List<Resource>();
             _parameters = new Dictionary<string, Parameter>();
-
+            _messages = new List<string>();
             _processedItems = new Dictionary<string, string>();
             _copyBlobDetails = new List<CopyBlobDetail>();
-
+            _storageAccountNames = new Dictionary<string, string>();
+            
             var token = _tokenProvider.GetToken(tenantId);
 
             _logProvider.WriteLog("GenerateTemplate", "Start processing selected virtual networks");
@@ -53,11 +55,11 @@ namespace MIGAZ.Generator
             {
                 _statusProvider.UpdateStatus("BUSY: Exporting Virtual Network : " + virtualnetworkname);
 
-                foreach (XmlNode virtualnetworksite in _asmRetriever.GetAzureASMResources("VirtualNetworks", subscriptionId, null, token).SelectNodes("//VirtualNetworkSite"))
+                foreach (XmlNode virtualnetworksite in (await _asmRetriever.GetAzureASMResources("VirtualNetworks", subscriptionId, null, token)).SelectNodes("//VirtualNetworkSite"))
                 {
                     if (virtualnetworksite.SelectSingleNode("Name").InnerText == virtualnetworkname)
                     {
-                        BuildVirtualNetworkObject(subscriptionId, virtualnetworksite, token);
+                        await BuildVirtualNetworkObject(subscriptionId, virtualnetworksite, token);
                     }
                 }
             }
@@ -73,7 +75,7 @@ namespace MIGAZ.Generator
                 Hashtable storageaccountinfo = new Hashtable();
                 storageaccountinfo.Add("name", storageaccountname);
 
-                XmlNode storageaccount = _asmRetriever.GetAzureASMResources("StorageAccount", subscriptionId, storageaccountinfo, token);
+                XmlNode storageaccount = await _asmRetriever.GetAzureASMResources("StorageAccount", subscriptionId, storageaccountinfo, token);
                 BuildStorageAccountObject(storageaccount);
             }
             _logProvider.WriteLog("GenerateTemplate", "End processing selected storage accounts");
@@ -83,34 +85,33 @@ namespace MIGAZ.Generator
             // process selected cloud services and virtual machines
             foreach (var cloudServiceVM in artefacts.VirtualMachines)
             {
-                string deploymentName;
-                string virtualNetworkName;
-                string loadBalancerName;
-                _asmRetriever.GetVMDetails(subscriptionId, cloudServiceVM.CloudService, cloudServiceVM.VirtualMachine, token, out deploymentName, out virtualNetworkName, out loadBalancerName);
+
+                var vmDetails = await _asmRetriever.GetVMDetails(subscriptionId, cloudServiceVM.CloudService, cloudServiceVM.VirtualMachine, token);
 
                 Hashtable cloudserviceinfo = new Hashtable();
                 cloudserviceinfo.Add("name", cloudServiceVM.CloudService);
-                XmlDocument cloudservice = _asmRetriever.GetAzureASMResources("CloudService", subscriptionId, cloudserviceinfo, token);
-                string location = cloudservice.SelectSingleNode("//HostedServiceProperties/Location").InnerText;
+                XmlDocument cloudservice = await _asmRetriever.GetAzureASMResources("CloudService", subscriptionId, cloudserviceinfo, token);
+                string location = cloudservice.SelectSingleNode("//HostedServiceProperties/ExtendedProperties/ExtendedProperty[Name='ResourceLocation']/Value").InnerText;
 
 
                 _statusProvider.UpdateStatus("BUSY: Exporting Cloud Service : " + cloudServiceVM.CloudService);
 
-                BuildPublicIPAddressObject(cloudservice, loadBalancerName);
-                BuildLoadBalancerObject(subscriptionId, cloudservice, loadBalancerName, artefacts, token);
+                XmlDocument reservedips = await _asmRetriever.GetAzureASMResources("ReservedIPs", subscriptionId, null, token);
+                BuildPublicIPAddressObject(cloudservice, vmDetails.LoadBalancerName, cloudServiceVM.CloudService, reservedips);
+                await BuildLoadBalancerObject(subscriptionId, cloudservice, vmDetails.LoadBalancerName, artefacts, token);
         
                 Hashtable virtualmachineinfo = new Hashtable();
                 virtualmachineinfo.Add("cloudservicename", cloudServiceVM.CloudService);
-                virtualmachineinfo.Add("deploymentname", deploymentName);
+                virtualmachineinfo.Add("deploymentname", vmDetails.DeploymentName);
                 virtualmachineinfo.Add("virtualmachinename", cloudServiceVM.VirtualMachine);
-                virtualmachineinfo.Add("virtualnetworkname", virtualNetworkName);
-                virtualmachineinfo.Add("loadbalancername", loadBalancerName);
+                virtualmachineinfo.Add("virtualnetworkname", vmDetails.VirtualNetworkName);
+                virtualmachineinfo.Add("loadbalancername", vmDetails.LoadBalancerName);
                 virtualmachineinfo.Add("location", location);
 
-                XmlDocument virtualmachine = _asmRetriever.GetAzureASMResources("VirtualMachine", subscriptionId, virtualmachineinfo, token);
+                XmlDocument virtualmachine = await _asmRetriever.GetAzureASMResources("VirtualMachine", subscriptionId, virtualmachineinfo, token);
 
                 // create new virtual network if virtualnetworkname is "empty"
-                if (virtualNetworkName == "empty")
+                if (vmDetails.VirtualNetworkName == "empty")
                 {
                     BuildNewVirtualNetworkObject(cloudservice, virtualmachineinfo);
                 }
@@ -120,10 +121,10 @@ namespace MIGAZ.Generator
 
                 // process network interface
                 List<NetworkProfile_NetworkInterface> networkinterfaces = new List<NetworkProfile_NetworkInterface>();
-                BuildNetworkInterfaceObject(subscriptionId, virtualmachine, virtualmachineinfo, ref networkinterfaces, token);
+                await BuildNetworkInterfaceObject(subscriptionId, virtualmachine, virtualmachineinfo, networkinterfaces, token);
 
                 // process virtual machine
-                BuildVirtualMachineObject(subscriptionId, virtualmachine, virtualmachineinfo, networkinterfaces, token);
+                await BuildVirtualMachineObject(subscriptionId, virtualmachine, virtualmachineinfo, networkinterfaces, token);
             }
             _logProvider.WriteLog("GenerateTemplate", "End processing selected cloud services and virtual machines");
 
@@ -132,25 +133,39 @@ namespace MIGAZ.Generator
             template.parameters = _parameters;
 
             // save JSON template
+            _statusProvider.UpdateStatus("BUSY: saving JSON template");
             string jsontext = JsonConvert.SerializeObject(template, Newtonsoft.Json.Formatting.Indented, new JsonSerializerSettings { NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore });
             jsontext = jsontext.Replace("schemalink", "$schema");
             WriteStream(templateWriter, jsontext);
             _logProvider.WriteLog("GenerateTemplate", "Write file export.json");
 
             // save blob copy details file
+            _statusProvider.UpdateStatus("BUSY: saving blob copy details file");
             jsontext = JsonConvert.SerializeObject(_copyBlobDetails, Newtonsoft.Json.Formatting.Indented, new JsonSerializerSettings { NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore });
             WriteStream(blobDetailWriter, jsontext);
             _logProvider.WriteLog("GenerateTemplate", "Write file copyblobdetails.json");
 
             // post Telemetry Record to ASMtoARMToolAPI
-            if (app.Default.AllowTelemetry)
+            if (_settingsProvider.AllowTelemetry)
             {
-                _telemetryProvider.PostTelemetryRecord(tenantId, subscriptionId, _processedItems);
+                XmlDocument subscriptions = await _asmRetriever.GetAzureASMResources("Subscriptions", subscriptionId, null, token);
+                string offercategories = "";
+                foreach (XmlNode subscription in subscriptions.SelectNodes("/Subscriptions/Subscription"))
+                {
+                    if (subscription.SelectSingleNode("SubscriptionID").InnerText == subscriptionId)
+                    {
+                        offercategories = subscription.SelectSingleNode("OfferCategories").InnerText;
+                    }
+                }
+
+                _statusProvider.UpdateStatus("BUSY: saving telemetry information");
+                _telemetryProvider.PostTelemetryRecord(tenantId, subscriptionId, _processedItems, offercategories);
             }
 
             _statusProvider.UpdateStatus("Ready");
 
             _logProvider.WriteLog("GenerateTemplate", "End");
+            return _messages;
         }
 
         private void BuildPublicIPAddressObject(ref NetworkInterface networkinterface)
@@ -179,21 +194,34 @@ namespace MIGAZ.Generator
             _logProvider.WriteLog("BuildPublicIPAddressObject", "End");
         }
 
-        private void BuildPublicIPAddressObject(XmlNode resource, string loadbalancername)
+        private void BuildPublicIPAddressObject(XmlNode resource, string loadbalancername, string cloudservicename, XmlDocument reservedips)
         {
             _logProvider.WriteLog("BuildPublicIPAddressObject", "Start");
 
             string publicipaddress_name = loadbalancername;
 
+            string publicipallocationmethod = "Dynamic";
+            foreach (XmlNode reservedip in reservedips.SelectNodes("/ReservedIPs/ReservedIP"))
+            {
+                if (reservedip.SelectNodes("ServiceName").Count > 0)
+                {
+                    if (reservedip.SelectSingleNode("ServiceName").InnerText == cloudservicename)
+                    {
+                        publicipallocationmethod = "Static";
+                    }
+                }
+            }
+
             Hashtable dnssettings = new Hashtable();
-            dnssettings.Add("domainNameLabel", (publicipaddress_name + app.Default.UniquenessSuffix).ToLower());
+            dnssettings.Add("domainNameLabel", (publicipaddress_name + _settingsProvider.UniquenessSuffix).ToLower());
 
             PublicIPAddress_Properties publicipaddress_properties = new PublicIPAddress_Properties();
             publicipaddress_properties.dnsSettings = dnssettings;
+            publicipaddress_properties.publicIPAllocationMethod = publicipallocationmethod;
 
             PublicIPAddress publicipaddress = new PublicIPAddress();
             publicipaddress.name = publicipaddress_name + "-PIP";
-            publicipaddress.location = resource.SelectSingleNode("//HostedServiceProperties/Location").InnerText;
+            publicipaddress.location = resource.SelectSingleNode("//HostedServiceProperties/ExtendedProperties/ExtendedProperty[Name='ResourceLocation']/Value").InnerText;
             publicipaddress.properties = publicipaddress_properties;
 
             try // it fails if this public ip address was already processed. safe to continue.
@@ -233,13 +261,13 @@ namespace MIGAZ.Generator
             _logProvider.WriteLog("BuildAvailabilitySetObject", "End");
         }
 
-        private void BuildLoadBalancerObject(string subscriptionId, XmlNode cloudservice, string loadbalancername, AsmArtefacts artefacts, string token)
+        private async Task BuildLoadBalancerObject(string subscriptionId, XmlNode cloudservice, string loadbalancername, AsmArtefacts artefacts, string token)
         {
             _logProvider.WriteLog("BuildLoadBalancerObject", "Start");
 
             LoadBalancer loadbalancer = new LoadBalancer();
             loadbalancer.name = loadbalancername;
-            loadbalancer.location = cloudservice.SelectSingleNode("//HostedServiceProperties/Location").InnerText;
+            loadbalancer.location = cloudservice.SelectSingleNode("//HostedServiceProperties/ExtendedProperties/ExtendedProperty[Name='ResourceLocation']/Value").InnerText;
 
             FrontendIPConfiguration_Properties frontendipconfiguration_properties = new FrontendIPConfiguration_Properties();
 
@@ -301,21 +329,18 @@ namespace MIGAZ.Generator
 
             foreach (var cloudServiceVM in artefacts.VirtualMachines)
             {
-                string deploymentName;
-                string virtualNetworkName;
-                string loadBalancerName;
-                _asmRetriever.GetVMDetails(subscriptionId, cloudServiceVM.CloudService, cloudServiceVM.VirtualMachine, token, out deploymentName, out virtualNetworkName, out loadBalancerName);
+                var vmDetails = await _asmRetriever.GetVMDetails(subscriptionId, cloudServiceVM.CloudService, cloudServiceVM.VirtualMachine, token);
 
 
-                if (loadBalancerName == loadbalancer.name)
+                if (vmDetails.LoadBalancerName == loadbalancer.name)
                 {
                     //process VM
  
                     Hashtable virtualmachineinfo = new Hashtable();
                     virtualmachineinfo.Add("cloudservicename", cloudServiceVM.CloudService);
-                    virtualmachineinfo.Add("deploymentname", deploymentName);
+                    virtualmachineinfo.Add("deploymentname", vmDetails.DeploymentName);
                     virtualmachineinfo.Add("virtualmachinename", cloudServiceVM.VirtualMachine);
-                    XmlDocument virtualmachine = _asmRetriever.GetAzureASMResources("VirtualMachine", subscriptionId, virtualmachineinfo, token);
+                    XmlDocument virtualmachine = await _asmRetriever.GetAzureASMResources("VirtualMachine", subscriptionId, virtualmachineinfo, token);
 
                     BuildLoadBalancerRules(virtualmachine, loadbalancer.name, ref inboundnatrules, ref loadbalancingrules, ref probes);
                 }
@@ -326,13 +351,21 @@ namespace MIGAZ.Generator
             loadbalancer_properties.probes = probes;
             loadbalancer.properties = loadbalancer_properties;
 
-            try // it fails if this load balancer was already processed. safe to continue.
+            // Add the load balancer only if there is any Load Balancing rule or Inbound NAT rule
+            if (inboundnatrules.Count > 0 || loadbalancingrules.Count > 0)
             {
-                _processedItems.Add("Microsoft.Network/loadBalancers/" + loadbalancer.name, loadbalancer.location);
-                _resources.Add(loadbalancer);
-                _logProvider.WriteLog("BuildLoadBalancerObject", "Microsoft.Network/loadBalancers/" + loadbalancer.name);
+                try // it fails if this load balancer was already processed. safe to continue.
+                {
+                    _processedItems.Add("Microsoft.Network/loadBalancers/" + loadbalancer.name, loadbalancer.location);
+                    _resources.Add(loadbalancer);
+                    _logProvider.WriteLog("BuildLoadBalancerObject", "Microsoft.Network/loadBalancers/" + loadbalancer.name);
+                }
+                catch { }
             }
-            catch { }
+            else
+            {
+                _logProvider.WriteLog("BuildLoadBalancerObject", "EMPTY Microsoft.Network/loadBalancers/" + loadbalancer.name);
+            }
 
             _logProvider.WriteLog("BuildLoadBalancerObject", "End");
         }
@@ -366,6 +399,7 @@ namespace MIGAZ.Generator
                 else // if it's a load balancing rule
                 {
                     string name = inputendpoint.SelectSingleNode("LoadBalancedEndpointSetName").InnerText;
+                    name = name.Replace(" ", "");
                     XmlNode probenode = inputendpoint.SelectSingleNode("LoadBalancerProbe");
 
                     // build probe
@@ -451,7 +485,7 @@ namespace MIGAZ.Generator
 
             VirtualNetwork virtualnetwork = new VirtualNetwork();
             virtualnetwork.name = info["cloudservicename"].ToString() + "-VNET";
-            virtualnetwork.location = resource.SelectSingleNode("//HostedServiceProperties/Location").InnerText;
+            virtualnetwork.location = resource.SelectSingleNode("//HostedServiceProperties/ExtendedProperties/ExtendedProperty[Name='ResourceLocation']/Value").InnerText;
 
             List<Subnet> subnets = new List<Subnet>();
             Subnet_Properties properties = new Subnet_Properties();
@@ -480,7 +514,7 @@ namespace MIGAZ.Generator
             _logProvider.WriteLog("BuildNewVirtualNetworkObject", "End");
         }
 
-        private void BuildVirtualNetworkObject(string subscriptionId, XmlNode resource, string token)
+        private async Task BuildVirtualNetworkObject(string subscriptionId, XmlNode resource, string token)
         {
             _logProvider.WriteLog("BuildVirtualNetworkObject", "Start");
 
@@ -506,54 +540,82 @@ namespace MIGAZ.Generator
 
             VirtualNetwork virtualnetwork = new VirtualNetwork();
             virtualnetwork.name = resource.SelectSingleNode("Name").InnerText.Replace(" ", "");
-            virtualnetwork.location = resource.SelectSingleNode("Location").InnerText;
+            // get location if virtual network was not deployed in a affinity group
+            if (resource.SelectNodes("Location").Count > 0)
+            {
+                virtualnetwork.location = resource.SelectSingleNode("Location").InnerText;
+            }
+            // get location if virtual network was deployed in a affinity group
+            else
+            {
+                Hashtable affinitygroupinfo = new Hashtable();
+                affinitygroupinfo.Add("affinitygroupname", resource.SelectSingleNode("AffinityGroup").InnerText);
+                XmlDocument affinitygroup = await _asmRetriever.GetAzureASMResources("AffinityGroup", subscriptionId, affinitygroupinfo, token);
+
+                virtualnetwork.location = affinitygroup.SelectSingleNode("//Location").InnerText;
+            }
             virtualnetwork.dependsOn = dependson;
 
             List<Subnet> subnets = new List<Subnet>();
-            foreach (XmlNode subnetnode in resource.SelectNodes("Subnets/Subnet"))
+            if (resource.SelectNodes("Subnets/Subnet").Count == 0)
             {
                 Subnet_Properties properties = new Subnet_Properties();
-                properties.addressPrefix = subnetnode.SelectSingleNode("AddressPrefix").InnerText;
+                properties.addressPrefix = addressprefixes[0];
 
                 Subnet subnet = new Subnet();
-                subnet.name = subnetnode.SelectSingleNode("Name").InnerText.Replace(" ", "");
+                subnet.name = "Subnet1";
                 subnet.properties = properties;
 
                 subnets.Add(subnet);
-
-                // add Network Security Group if exists
-                if (subnetnode.SelectNodes("NetworkSecurityGroup").Count > 0)
+                _messages.Add($"VNET '{virtualnetwork.name}' has no subnets defined. We've created a default subnet 'Subnet1' covering the entire address space.");
+            }
+            else
+            {
+                foreach (XmlNode subnetnode in resource.SelectNodes("Subnets/Subnet"))
                 {
-                    NetworkSecurityGroup networksecuritygroup = BuildNetworkSecurityGroup(subscriptionId, subnetnode.SelectSingleNode("NetworkSecurityGroup").InnerText, token);
+                    Subnet_Properties properties = new Subnet_Properties();
+                    properties.addressPrefix = subnetnode.SelectSingleNode("AddressPrefix").InnerText;
 
-                    // Add NSG reference to the subnet
-                    Reference networksecuritygroup_ref = new Reference();
-                    networksecuritygroup_ref.id = "[concat(resourceGroup().id,'/providers/Microsoft.Network/networkSecurityGroups/" + networksecuritygroup.name + "')]";
+                    Subnet subnet = new Subnet();
+                    subnet.name = subnetnode.SelectSingleNode("Name").InnerText.Replace(" ", "");
+                    subnet.properties = properties;
 
-                    properties.networkSecurityGroup = networksecuritygroup_ref;
+                    subnets.Add(subnet);
 
-                    // Add NSG dependsOn to the Virtual Network object
-                    if (!virtualnetwork.dependsOn.Contains(networksecuritygroup_ref.id))
+                    // add Network Security Group if exists
+                    if (subnetnode.SelectNodes("NetworkSecurityGroup").Count > 0)
                     {
-                        virtualnetwork.dependsOn.Add(networksecuritygroup_ref.id);
+                        NetworkSecurityGroup networksecuritygroup = await BuildNetworkSecurityGroup(subscriptionId, subnetnode.SelectSingleNode("NetworkSecurityGroup").InnerText, token);
+
+                        // Add NSG reference to the subnet
+                        Reference networksecuritygroup_ref = new Reference();
+                        networksecuritygroup_ref.id = "[concat(resourceGroup().id,'/providers/Microsoft.Network/networkSecurityGroups/" + networksecuritygroup.name + "')]";
+
+                        properties.networkSecurityGroup = networksecuritygroup_ref;
+
+                        // Add NSG dependsOn to the Virtual Network object
+                        if (!virtualnetwork.dependsOn.Contains(networksecuritygroup_ref.id))
+                        {
+                            virtualnetwork.dependsOn.Add(networksecuritygroup_ref.id);
+                        }
                     }
-                }
 
-                // add Route Table if exists
-                if (subnetnode.SelectNodes("RouteTableName").Count > 0)
-                {
-                    RouteTable routetable = BuildRouteTable(subscriptionId, subnetnode.SelectSingleNode("RouteTableName").InnerText, token);
-
-                    // Add Route Table reference to the subnet
-                    Reference routetable_ref = new Reference();
-                    routetable_ref.id = "[concat(resourceGroup().id,'/providers/Microsoft.Network/routeTables/" + routetable.name + "')]";
-
-                    properties.routeTable = routetable_ref;
-
-                    // Add Route Table dependsOn to the Virtual Network object
-                    if (!virtualnetwork.dependsOn.Contains(routetable_ref.id))
+                    // add Route Table if exists
+                    if (subnetnode.SelectNodes("RouteTableName").Count > 0)
                     {
-                        virtualnetwork.dependsOn.Add(routetable_ref.id);
+                        RouteTable routetable = await BuildRouteTable(subscriptionId, subnetnode.SelectSingleNode("RouteTableName").InnerText, token);
+
+                        // Add Route Table reference to the subnet
+                        Reference routetable_ref = new Reference();
+                        routetable_ref.id = "[concat(resourceGroup().id,'/providers/Microsoft.Network/routeTables/" + routetable.name + "')]";
+
+                        properties.routeTable = routetable_ref;
+
+                        // Add Route Table dependsOn to the Virtual Network object
+                        if (!virtualnetwork.dependsOn.Contains(routetable_ref.id))
+                        {
+                            virtualnetwork.dependsOn.Add(routetable_ref.id);
+                        }
                     }
                 }
             }
@@ -569,7 +631,13 @@ namespace MIGAZ.Generator
             _resources.Add(virtualnetwork);
             _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/virtualNetworks/" + virtualnetwork.name);
 
+            await AddGatewaysToVirtualNetwork(subscriptionId, resource, token, virtualnetwork);
 
+            _logProvider.WriteLog("BuildVirtualNetworkObject", "End");
+        }
+
+        private async Task AddGatewaysToVirtualNetwork(string subscriptionId, XmlNode resource, string token, VirtualNetwork virtualnetwork)
+        {
             // Process Virtual Network Gateway if one exists
             if (resource.SelectNodes("Gateway").Count > 0)
             {
@@ -578,7 +646,7 @@ namespace MIGAZ.Generator
                 publicipaddress_properties.publicIPAllocationMethod = "Dynamic";
 
                 PublicIPAddress publicipaddress = new PublicIPAddress();
-                publicipaddress.name = virtualnetwork.name + "-VPNGateway-PIP";
+                publicipaddress.name = virtualnetwork.name + "-Gateway-PIP";
                 publicipaddress.location = virtualnetwork.location;
                 publicipaddress.properties = publicipaddress_properties;
 
@@ -592,7 +660,7 @@ namespace MIGAZ.Generator
                 Reference publicipaddress_ref = new Reference();
                 publicipaddress_ref.id = "[concat(resourceGroup().id, '/providers/Microsoft.Network/publicIPAddresses/" + publicipaddress.name + "')]";
 
-                dependson = new List<string>();
+                var dependson = new List<string>();
                 dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/virtualNetworks/" + virtualnetwork.name + "')]");
                 dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/publicIPAddresses/" + publicipaddress.name + "')]");
 
@@ -602,7 +670,7 @@ namespace MIGAZ.Generator
                 ipconfiguration_properties.publicIPAddress = publicipaddress_ref;
 
                 IpConfiguration virtualnetworkgateway_ipconfiguration = new IpConfiguration();
-                virtualnetworkgateway_ipconfiguration.name = "VPNGatewayIPConfig";
+                virtualnetworkgateway_ipconfiguration.name = "GatewayIPConfig";
                 virtualnetworkgateway_ipconfiguration.properties = ipconfiguration_properties;
 
                 VirtualNetworkGateway_Sku virtualnetworkgateway_sku = new VirtualNetworkGateway_Sku();
@@ -615,12 +683,12 @@ namespace MIGAZ.Generator
                 VirtualNetworkGateway_Properties virtualnetworkgateway_properties = new VirtualNetworkGateway_Properties();
                 virtualnetworkgateway_properties.ipConfigurations = virtualnetworkgateway_ipconfigurations;
                 virtualnetworkgateway_properties.sku = virtualnetworkgateway_sku;
-                virtualnetworkgateway_properties.gatewayType = "Vpn";
 
+                
                 // If there is VPN Client configuration
                 if (resource.SelectNodes("Gateway/VPNClientAddressPool/AddressPrefixes/AddressPrefix").Count > 0)
                 {
-                    addressprefixes = new List<string>();
+                    var addressprefixes = new List<string>();
                     addressprefixes.Add(resource.SelectNodes("Gateway/VPNClientAddressPool/AddressPrefixes/AddressPrefix")[0].InnerText);
 
                     AddressSpace vpnclientaddresspool = new AddressSpace();
@@ -632,7 +700,7 @@ namespace MIGAZ.Generator
                     //Process vpnClientRootCertificates
                     Hashtable infocrc = new Hashtable();
                     infocrc.Add("virtualnetworkname", resource.SelectSingleNode("Name").InnerText);
-                    XmlDocument clientrootcertificates = _asmRetriever.GetAzureASMResources("ClientRootCertificates", subscriptionId, infocrc, token);
+                    XmlDocument clientrootcertificates = await _asmRetriever.GetAzureASMResources("ClientRootCertificates", subscriptionId, infocrc, token);
 
                     List<VPNClientCertificate> vpnclientrootcertificates = new List<VPNClientCertificate>();
                     foreach (XmlNode certificate in clientrootcertificates.SelectNodes("//ClientRootCertificate"))
@@ -640,7 +708,7 @@ namespace MIGAZ.Generator
                         Hashtable infocert = new Hashtable();
                         infocert.Add("virtualnetworkname", resource.SelectSingleNode("Name").InnerText);
                         infocert.Add("thumbprint", certificate.SelectSingleNode("Thumbprint").InnerText);
-                        XmlDocument clientrootcertificate = _asmRetriever.GetAzureASMResources("ClientRootCertificate", subscriptionId, infocert, token);
+                        XmlDocument clientrootcertificate = await _asmRetriever.GetAzureASMResources("ClientRootCertificate", subscriptionId, infocert, token);
 
                         VPNClientCertificate_Properties vpnclientcertificate_properties = new VPNClientCertificate_Properties();
                         vpnclientcertificate_properties.PublicCertData = Convert.ToBase64String(StrToByteArray(clientrootcertificate.InnerText));
@@ -660,34 +728,56 @@ namespace MIGAZ.Generator
                 Hashtable virtualnetworkgatewayinfo = new Hashtable();
                 virtualnetworkgatewayinfo.Add("virtualnetworkname", resource.SelectSingleNode("Name").InnerText);
                 virtualnetworkgatewayinfo.Add("localnetworksitename", "");
-                XmlDocument gateway = _asmRetriever.GetAzureASMResources("VirtualNetworkGateway", subscriptionId, virtualnetworkgatewayinfo, token);
 
-                string vpnType = gateway.SelectSingleNode("//GatewayType").InnerText;
-                if (vpnType == "StaticRouting")
+                var connectionTypeNodes = resource.SelectNodes("Gateway/Sites/LocalNetworkSite/Connections/Connection/Type");
+                if (connectionTypeNodes.Count > 0 && connectionTypeNodes[0].InnerText == "Dedicated")
                 {
-                    vpnType = "PolicyBased";
+                    virtualnetworkgateway_properties.gatewayType = "ExpressRoute";
+                    virtualnetworkgateway_properties.enableBgp = null;
+                    virtualnetworkgateway_properties.vpnType = null;
                 }
-                else if (vpnType == "DynamicRouting")
+                else
                 {
-                    vpnType = "RouteBased";
+                    virtualnetworkgateway_properties.gatewayType = "Vpn";
+                    XmlDocument gateway = await _asmRetriever.GetAzureASMResources("VirtualNetworkGateway", subscriptionId, virtualnetworkgatewayinfo, token);
+                    string vpnType = gateway.SelectSingleNode("//GatewayType").InnerText;
+                    if (vpnType == "StaticRouting")
+                    {
+                        vpnType = "PolicyBased";
+                    }
+                    else if (vpnType == "DynamicRouting")
+                    {
+                        vpnType = "RouteBased";
+                    }
+                    virtualnetworkgateway_properties.vpnType = vpnType;
                 }
-                virtualnetworkgateway_properties.vpnType = vpnType;
 
                 VirtualNetworkGateway virtualnetworkgateway = new VirtualNetworkGateway();
                 virtualnetworkgateway.location = virtualnetwork.location;
-                virtualnetworkgateway.name = virtualnetwork.name + "-VPNGateway";
+                virtualnetworkgateway.name = virtualnetwork.name + "-Gateway";
                 virtualnetworkgateway.properties = virtualnetworkgateway_properties;
                 virtualnetworkgateway.dependsOn = dependson;
 
                 _processedItems.Add("Microsoft.Network/virtualNetworkGateways/" + virtualnetworkgateway.name, virtualnetworkgateway.location);
                 _resources.Add(virtualnetworkgateway);
                 _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/virtualNetworkGateways/" + virtualnetworkgateway.name);
+                await AddLocalSiteToGateway(subscriptionId, resource, token, virtualnetwork, virtualnetworkgatewayinfo, virtualnetworkgateway);
+            }
+        }
 
-                // Local Network Gateways & Connections
-                foreach (XmlNode LocalNetworkSite in resource.SelectNodes("Gateway/Sites/LocalNetworkSite"))
+        private async Task AddLocalSiteToGateway(string subscriptionId, XmlNode resource, string token, VirtualNetwork virtualnetwork, Hashtable virtualnetworkgatewayinfo, VirtualNetworkGateway virtualnetworkgateway)
+        {
+            // Local Network Gateways & Connections
+            foreach (XmlNode LocalNetworkSite in resource.SelectNodes("Gateway/Sites/LocalNetworkSite"))
+            {
+                GatewayConnection_Properties gatewayconnection_properties = new GatewayConnection_Properties();
+                var dependson = new List<string>();
+
+                string connectionType = LocalNetworkSite.SelectSingleNode("Connections/Connection/Type").InnerText;
+                if (connectionType == "IPsec")
                 {
                     // Local Network Gateway
-                    addressprefixes = new List<string>();
+                    var addressprefixes = new List<string>();
                     foreach (XmlNode addressprefix in LocalNetworkSite.SelectNodes("AddressSpace/AddressPrefixes"))
                     {
                         addressprefixes.Add(addressprefix.SelectSingleNode("AddressPrefix").InnerText);
@@ -707,54 +797,68 @@ namespace MIGAZ.Generator
                     localnetworkgateway.location = virtualnetwork.location;
                     localnetworkgateway.properties = localnetworkgateway_properties;
 
-                    _processedItems.Add("Microsoft.Network/localNetworkGateways/" + localnetworkgateway.name, localnetworkgateway.location);
-                    _resources.Add(localnetworkgateway);
+                    try
+                    {
+                        _processedItems.Add("Microsoft.Network/localNetworkGateways/" + localnetworkgateway.name, localnetworkgateway.location);
+                        _resources.Add(localnetworkgateway);
+                    }
+                    catch { }
                     _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/localNetworkGateways/" + localnetworkgateway.name);
-
-                    // Connections
-                    Reference virtualnetworkgateway_ref = new Reference();
-                    virtualnetworkgateway_ref.id = "[concat(resourceGroup().id, '/providers/Microsoft.Network/virtualNetworkGateways/" + virtualnetworkgateway.name + "')]";
 
                     Reference localnetworkgateway_ref = new Reference();
                     localnetworkgateway_ref.id = "[concat(resourceGroup().id, '/providers/Microsoft.Network/localNetworkGateways/" + localnetworkgateway.name + "')]";
-
-                    dependson = new List<string>();
-                    dependson.Add(virtualnetworkgateway_ref.id);
                     dependson.Add(localnetworkgateway_ref.id);
 
-                    GatewayConnection_Properties gatewayconnection_properties = new GatewayConnection_Properties();
-                    gatewayconnection_properties.connectionType = LocalNetworkSite.SelectSingleNode("Connections/Connection/Type").InnerText;
-                    gatewayconnection_properties.virtualNetworkGateway1 = virtualnetworkgateway_ref;
+                    gatewayconnection_properties.connectionType = connectionType;
                     gatewayconnection_properties.localNetworkGateway2 = localnetworkgateway_ref;
 
                     virtualnetworkgatewayinfo["localnetworksitename"] = LocalNetworkSite.SelectSingleNode("Name").InnerText;
-                    XmlDocument connectionsharekey = _asmRetriever.GetAzureASMResources("VirtualNetworkGatewaySharedKey", subscriptionId, virtualnetworkgatewayinfo, token);
-                    gatewayconnection_properties.sharedKey = connectionsharekey.SelectSingleNode("//Value").InnerText;
-
-                    GatewayConnection gatewayconnection = new GatewayConnection();
-                    gatewayconnection.name = virtualnetworkgateway.name + "-" + localnetworkgateway.name + "-connection";
-                    gatewayconnection.location = virtualnetwork.location;
-                    gatewayconnection.properties = gatewayconnection_properties;
-                    gatewayconnection.dependsOn = dependson;
-
-                    _processedItems.Add("Microsoft.Network/connections/" + gatewayconnection.name, gatewayconnection.location);
-                    _resources.Add(gatewayconnection);
-                    _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/connections/" + gatewayconnection.name);
+                    XmlDocument connectionsharekey = await _asmRetriever.GetAzureASMResources("VirtualNetworkGatewaySharedKey", subscriptionId, virtualnetworkgatewayinfo, token);
+                    if (connectionsharekey == null)
+                    {
+                        gatewayconnection_properties.sharedKey = "***SHARED KEY GOES HERE***";
+                        _messages.Add($"Unable to retrieve shared key for VPN connection '{virtualnetworkgateway.name}'. Please edit the template to provide this value.");
+                    }
+                    else
+                    {
+                        gatewayconnection_properties.sharedKey = connectionsharekey.SelectSingleNode("//Value").InnerText;
+                    }
                 }
-            }
+                else if (connectionType == "Dedicated")
+                {
+                    gatewayconnection_properties.connectionType = "ExpressRoute";
+                    gatewayconnection_properties.peer = new Reference() { id = "/subscriptions/***/resourceGroups/***/providers/Microsoft.Network/expressRouteCircuits/***" };
+                    _messages.Add($"Gateway '{virtualnetworkgateway.name}' connects to ExpressRoute. MigAz is unable to migrate ExpressRoute circuits. Please create or convert the circuit yourself and update the circuit resource ID in the generated template.");
+                }
 
-            _logProvider.WriteLog("BuildVirtualNetworkObject", "End");
+                // Connections
+                Reference virtualnetworkgateway_ref = new Reference();
+                virtualnetworkgateway_ref.id = "[concat(resourceGroup().id, '/providers/Microsoft.Network/virtualNetworkGateways/" + virtualnetworkgateway.name + "')]";
+                     
+                dependson.Add(virtualnetworkgateway_ref.id);
+
+                gatewayconnection_properties.virtualNetworkGateway1 = virtualnetworkgateway_ref;
+
+                GatewayConnection gatewayconnection = new GatewayConnection();
+                gatewayconnection.name = virtualnetworkgateway.name + "-" + LocalNetworkSite.SelectSingleNode("Name").InnerText.Replace(' ', '_') + "-connection";
+                gatewayconnection.location = virtualnetwork.location;
+                gatewayconnection.properties = gatewayconnection_properties;
+                gatewayconnection.dependsOn = dependson;
+
+                _processedItems.Add("Microsoft.Network/connections/" + gatewayconnection.name, gatewayconnection.location);
+                _resources.Add(gatewayconnection);
+                _logProvider.WriteLog("BuildVirtualNetworkObject", "Microsoft.Network/connections/" + gatewayconnection.name);
+
+            }
         }
 
-
-
-        private NetworkSecurityGroup BuildNetworkSecurityGroup(string subscriptionId, string networksecuritygroupname, string token)
+        private async Task<NetworkSecurityGroup> BuildNetworkSecurityGroup(string subscriptionId, string networksecuritygroupname, string token)
         {
             _logProvider.WriteLog("BuildNetworkSecurityGroup", "Start");
 
             Hashtable nsginfo = new Hashtable();
             nsginfo.Add("name", networksecuritygroupname);
-            XmlDocument resource = _asmRetriever.GetAzureASMResources("NetworkSecurityGroup", subscriptionId, nsginfo, token);
+            XmlDocument resource = await _asmRetriever.GetAzureASMResources("NetworkSecurityGroup", subscriptionId, nsginfo, token);
 
             NetworkSecurityGroup networksecuritygroup = new NetworkSecurityGroup();
             networksecuritygroup.name = resource.SelectSingleNode("//Name").InnerText.Replace(' ', '-');
@@ -774,10 +878,8 @@ namespace MIGAZ.Generator
                     securityrule_properties.direction = rule.SelectSingleNode("Type").InnerText;
                     securityrule_properties.priority = long.Parse(rule.SelectSingleNode("Priority").InnerText);
                     securityrule_properties.access = rule.SelectSingleNode("Action").InnerText;
-                    securityrule_properties.sourceAddressPrefix = rule.SelectSingleNode("SourceAddressPrefix").InnerText;
-                    securityrule_properties.sourceAddressPrefix.Replace("_", "");
-                    securityrule_properties.destinationAddressPrefix = rule.SelectSingleNode("DestinationAddressPrefix").InnerText;
-                    securityrule_properties.destinationAddressPrefix.Replace("_", "");
+                    securityrule_properties.sourceAddressPrefix = rule.SelectSingleNode("SourceAddressPrefix").InnerText.Replace("_", "");
+                    securityrule_properties.destinationAddressPrefix = rule.SelectSingleNode("DestinationAddressPrefix").InnerText.Replace("_", ""); 
                     securityrule_properties.sourcePortRange = rule.SelectSingleNode("SourcePortRange").InnerText;
                     securityrule_properties.destinationPortRange = rule.SelectSingleNode("DestinationPortRange").InnerText;
                     securityrule_properties.protocol = rule.SelectSingleNode("Protocol").InnerText;
@@ -805,13 +907,13 @@ namespace MIGAZ.Generator
             return networksecuritygroup;
         }
 
-        private RouteTable BuildRouteTable(string subscriptionId, string routetablename, string token)
+        private async Task<RouteTable> BuildRouteTable(string subscriptionId, string routetablename, string token)
         {
             _logProvider.WriteLog("BuildRouteTable", "Start");
 
             Hashtable info = new Hashtable();
             info.Add("name", routetablename);
-            XmlDocument resource = _asmRetriever.GetAzureASMResources("RouteTable", subscriptionId, info, token);
+            XmlDocument resource = await _asmRetriever.GetAzureASMResources("RouteTable", subscriptionId, info, token);
 
             RouteTable routetable = new RouteTable();
             routetable.name = resource.SelectSingleNode("//Name").InnerText;
@@ -870,7 +972,7 @@ namespace MIGAZ.Generator
             return routetable;
         }
 
-        private void BuildNetworkInterfaceObject(string subscriptionId, XmlNode resource, Hashtable virtualmachineinfo, ref List<NetworkProfile_NetworkInterface> networkinterfaces, string token)
+        private async Task BuildNetworkInterfaceObject(string subscriptionId, XmlNode resource, Hashtable virtualmachineinfo, List<NetworkProfile_NetworkInterface> networkinterfaces, string token)
         {
             _logProvider.WriteLog("BuildNetworkInterfaceObject", "Start");
 
@@ -879,17 +981,24 @@ namespace MIGAZ.Generator
             string deploymentname = virtualmachineinfo["deploymentname"].ToString();
             string virtualnetworkname = virtualmachineinfo["virtualnetworkname"].ToString();
             string loadbalancername = virtualmachineinfo["loadbalancername"].ToString();
-            string subnet_name = "";
+            string subnet_name = "Subnet1";
 
             if (virtualnetworkname != "empty")
             {
                 virtualnetworkname = virtualmachineinfo["virtualnetworkname"].ToString().Replace(" ", "");
-                subnet_name = resource.SelectSingleNode("//ConfigurationSets/ConfigurationSet/SubnetNames[1]/SubnetName").InnerText.Replace(" ", "");
+                if (resource.SelectSingleNode("//ConfigurationSets/ConfigurationSet/SubnetNames/SubnetName") != null)
+                {
+                    subnet_name = resource.SelectSingleNode("//ConfigurationSets/ConfigurationSet/SubnetNames[1]/SubnetName").InnerText.Replace(" ", "");
+                }
+                else
+                {
+                    _messages.Add($"VM '{virtualmachinename}' has no subnet defined. We have placed it on a subnet called 'Subnet1'.");
+                }
             }
             else
             {
                 virtualnetworkname = cloudservicename + "-VNET";
-                subnet_name = "Subnet1";
+                _messages.Add($"VM '{virtualmachinename}' has no VNET defined. We have placed it in a new VNET called {virtualnetworkname}.");
             }
 
             Reference subnet_ref = new Reference();
@@ -909,6 +1018,12 @@ namespace MIGAZ.Generator
             //    privateIPAddress = virtualmachineinfo["ipaddress"].ToString();
             //}
 
+            List<string> dependson = new List<string>();
+            if (GetProcessedItem("Microsoft.Network/virtualNetworks/" + virtualnetworkname))
+            {
+                dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/virtualNetworks/" + virtualnetworkname + "')]");
+            }
+
             // Get the list of endpoints
             XmlNodeList inputendpoints = resource.SelectNodes("//ConfigurationSets/ConfigurationSet/InputEndpoints/InputEndpoint");
 
@@ -920,6 +1035,8 @@ namespace MIGAZ.Generator
                 loadBalancerBackendAddressPool.id = "[concat(resourceGroup().id, '/providers/Microsoft.Network/loadBalancers/" + loadbalancername + "/backendAddressPools/default')]";
 
                 loadBalancerBackendAddressPools.Add(loadBalancerBackendAddressPool);
+
+                dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/loadBalancers/" + loadbalancername + "')]");
             }
 
             // Adds the references to the inboud nat rules
@@ -965,13 +1082,6 @@ namespace MIGAZ.Generator
                 networkinterface_properties.enableIPForwarding = true;
             }
 
-            List<string> dependson = new List<string>();
-            if (GetProcessedItem("Microsoft.Network/virtualNetworks/" + virtualnetworkname))
-            {
-                dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/virtualNetworks/" + virtualnetworkname + "')]");
-            }
-            dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/loadBalancers/" + loadbalancername + "')]");
-
             string networkinterface_name = virtualmachinename;
             NetworkInterface networkinterface = new NetworkInterface();
             networkinterface.name = networkinterface_name;
@@ -988,7 +1098,7 @@ namespace MIGAZ.Generator
 
             if (resource.SelectNodes("//ConfigurationSets/ConfigurationSet/NetworkSecurityGroup").Count > 0)
             {
-                NetworkSecurityGroup networksecuritygroup = BuildNetworkSecurityGroup(subscriptionId, resource.SelectSingleNode("//ConfigurationSets/ConfigurationSet/NetworkSecurityGroup").InnerText, token);
+                NetworkSecurityGroup networksecuritygroup = await BuildNetworkSecurityGroup(subscriptionId, resource.SelectSingleNode("//ConfigurationSets/ConfigurationSet/NetworkSecurityGroup").InnerText, token);
 
                 // Add NSG reference to the network interface
                 Reference networksecuritygroup_ref = new Reference();
@@ -1078,7 +1188,7 @@ namespace MIGAZ.Generator
             _logProvider.WriteLog("BuildNetworkInterfaceObject", "End");
         }
 
-        private void BuildVirtualMachineObject(string subscriptionId, XmlNode resource, Hashtable virtualmachineinfo, List<NetworkProfile_NetworkInterface> networkinterfaces, string token)
+        private async Task BuildVirtualMachineObject(string subscriptionId, XmlNode resource, Hashtable virtualmachineinfo, List<NetworkProfile_NetworkInterface> networkinterfaces, string token)
         {
             _logProvider.WriteLog("BuildVirtualMachineObject", "Start");
 
@@ -1088,9 +1198,9 @@ namespace MIGAZ.Generator
 
             XmlNode osvirtualharddisk = resource.SelectSingleNode("//OSVirtualHardDisk");
             string olddiskurl = osvirtualharddisk.SelectSingleNode("MediaLink").InnerText;
-            string[] splitarray = olddiskurl.Split(new char[] { '/', '.' });
-            string oldstorageaccountname = splitarray[2];
-            string newstorageaccountname = oldstorageaccountname + app.Default.UniquenessSuffix;
+            string[] splitarray = olddiskurl.Split(new char[] { '/' });
+            string oldstorageaccountname = splitarray[2].Split(new char[] { '.' })[0];
+            string newstorageaccountname = GetNewStorageAccountName(oldstorageaccountname);
             string newdiskurl = olddiskurl.Replace(oldstorageaccountname + ".", newstorageaccountname + ".");
 
             Hashtable storageaccountdependencies = new Hashtable();
@@ -1114,7 +1224,7 @@ namespace MIGAZ.Generator
             OsProfile osprofile = new OsProfile();
 
             // if the tool is configured to create new VMs with empty data disks
-            if (app.Default.BuildEmpty)
+            if (_settingsProvider.BuildEmpty)
             {
                 osdisk.createOption = "FromImage";
 
@@ -1168,17 +1278,17 @@ namespace MIGAZ.Generator
                 Hashtable storageaccountinfo = new Hashtable();
                 storageaccountinfo.Add("name", oldstorageaccountname);
 
-                XmlDocument storageaccountkeys = _asmRetriever.GetAzureASMResources("StorageAccountKeys", subscriptionId, storageaccountinfo, token);
+                XmlDocument storageaccountkeys = await _asmRetriever.GetAzureASMResources("StorageAccountKeys", subscriptionId, storageaccountinfo, token);
                 string key = storageaccountkeys.SelectSingleNode("//StorageServiceKeys/Primary").InnerText;
 
                 CopyBlobDetail copyblobdetail = new CopyBlobDetail();
                 copyblobdetail.SourceSA = oldstorageaccountname;
-                copyblobdetail.SourceContainer = splitarray[7];
-                copyblobdetail.SourceBlob = splitarray[8] + "." + splitarray[9];
+                copyblobdetail.SourceContainer = splitarray[3];
+                copyblobdetail.SourceBlob = splitarray[4];
                 copyblobdetail.SourceKey = key;
                 copyblobdetail.DestinationSA = newstorageaccountname;
-                copyblobdetail.DestinationContainer = splitarray[7];
-                copyblobdetail.DestinationBlob = splitarray[8] + "." + splitarray[9];
+                copyblobdetail.DestinationContainer = splitarray[3];
+                copyblobdetail.DestinationBlob = splitarray[4];
                 _copyBlobDetails.Add(copyblobdetail);
                 // end of block of code to help copying the blobs to the new storage accounts
             }
@@ -1200,13 +1310,13 @@ namespace MIGAZ.Generator
                 }
 
                 olddiskurl = datadisknode.SelectSingleNode("MediaLink").InnerText;
-                splitarray = olddiskurl.Split(new char[] { '/', '.' });
-                oldstorageaccountname = splitarray[2];
-                newstorageaccountname = oldstorageaccountname + app.Default.UniquenessSuffix;
+                splitarray = olddiskurl.Split(new char[] { '/' });
+                oldstorageaccountname = splitarray[2].Split(new char[] { '.' })[0];
+                newstorageaccountname = GetNewStorageAccountName(oldstorageaccountname);
                 newdiskurl = olddiskurl.Replace(oldstorageaccountname + ".", newstorageaccountname + ".");
 
                 // if the tool is configured to create new VMs with empty data disks
-                if (app.Default.BuildEmpty)
+                if (_settingsProvider.BuildEmpty)
                 {
                     datadisk.createOption = "Empty";
                 }
@@ -1219,17 +1329,17 @@ namespace MIGAZ.Generator
                     Hashtable storageaccountinfo = new Hashtable();
                     storageaccountinfo.Add("name", oldstorageaccountname);
 
-                    XmlDocument storageaccountkeys = _asmRetriever.GetAzureASMResources("StorageAccountKeys", subscriptionId, storageaccountinfo, token);
+                    XmlDocument storageaccountkeys = await _asmRetriever.GetAzureASMResources("StorageAccountKeys", subscriptionId, storageaccountinfo, token);
                     string key = storageaccountkeys.SelectSingleNode("//StorageServiceKeys/Primary").InnerText;
 
                     CopyBlobDetail copyblobdetail = new CopyBlobDetail();
                     copyblobdetail.SourceSA = oldstorageaccountname;
-                    copyblobdetail.SourceContainer = splitarray[7];
-                    copyblobdetail.SourceBlob = splitarray[8] + "." + splitarray[9];
+                    copyblobdetail.SourceContainer = splitarray[3];
+                    copyblobdetail.SourceBlob = splitarray[4];
                     copyblobdetail.SourceKey = key;
                     copyblobdetail.DestinationSA = newstorageaccountname;
-                    copyblobdetail.DestinationContainer = splitarray[7];
-                    copyblobdetail.DestinationBlob = splitarray[8] + "." + splitarray[9];
+                    copyblobdetail.DestinationContainer = splitarray[3];
+                    copyblobdetail.DestinationBlob = splitarray[4];
                     _copyBlobDetails.Add(copyblobdetail);
                     // end of block of code to help copying the blobs to the new storage accounts
                 }
@@ -1245,23 +1355,72 @@ namespace MIGAZ.Generator
             }
 
             StorageProfile storageprofile = new StorageProfile();
-            if (app.Default.BuildEmpty) { storageprofile.imageReference = imagereference; }
+            if (_settingsProvider.BuildEmpty) { storageprofile.imageReference = imagereference; }
             storageprofile.osDisk = osdisk;
             storageprofile.dataDisks = datadisks;
 
             VirtualMachine_Properties virtualmachine_properties = new VirtualMachine_Properties();
             virtualmachine_properties.hardwareProfile = hardwareprofile;
-            if (app.Default.BuildEmpty) { virtualmachine_properties.osProfile = osprofile; }
+            if (_settingsProvider.BuildEmpty) { virtualmachine_properties.osProfile = osprofile; }
             virtualmachine_properties.networkProfile = networkprofile;
             virtualmachine_properties.storageProfile = storageprofile;
 
             List<string> dependson = new List<string>();
             dependson.Add("[concat(resourceGroup().id, '/providers/Microsoft.Network/networkInterfaces/" + networkinterfacename + "')]");
 
+            // Diagnostics Extension
+            Extension extension_iaasdiagnostics = null;
+
+            //XmlNodeList resourceextensionreferences = resource.SelectNodes("//ResourceExtensionReferences/ResourceExtensionReference");
+            //foreach (XmlNode resourceextensionreference in resourceextensionreferences)
+            //{
+            //    if (resourceextensionreference.SelectSingleNode("Name").InnerText == "IaaSDiagnostics")
+            //    {
+            //        string json = Base64Decode(resourceextensionreference.SelectSingleNode("ResourceExtensionParameterValues/ResourceExtensionParameterValue/Value").InnerText);
+            //        var resourceextensionparametervalue = JsonConvert.DeserializeObject<dynamic>(json);
+            //        string diagnosticsstorageaccount = resourceextensionparametervalue.storageAccount.Value + _settingsProvider.UniquenessSuffix;
+            //        string xmlcfgvalue = Base64Decode(resourceextensionparametervalue.xmlCfg.Value);
+            //        xmlcfgvalue = xmlcfgvalue.Replace("\n", "");
+            //        xmlcfgvalue = xmlcfgvalue.Replace("\r", "");
+
+            //        XmlDocument xmlcfg = new XmlDocument();
+            //        xmlcfg.LoadXml(xmlcfgvalue);
+
+            //        XmlNodeList mynodelist = xmlcfg.SelectNodes("/wadCfg/DiagnosticMonitorConfiguration/Metrics");
+
+
+
+
+            //        extension_iaasdiagnostics = new Extension();
+            //        extension_iaasdiagnostics.name = "Microsoft.Insights.VMDiagnosticsSettings";
+            //        extension_iaasdiagnostics.type = "extensions";
+            //        extension_iaasdiagnostics.location = virtualmachineinfo["location"].ToString();
+            //        extension_iaasdiagnostics.dependsOn = new List<string>();
+            //        extension_iaasdiagnostics.dependsOn.Add("[concat(resourceGroup().id, '/providers/Microsoft.Compute/virtualMachines/" + virtualmachinename + "')]");
+            //        extension_iaasdiagnostics.dependsOn.Add("[concat(resourceGroup().id, '/providers/Microsoft.Storage/storageAccounts/" + diagnosticsstorageaccount + "')]");
+
+            //        Extension_Properties extension_iaasdiagnostics_properties = new Extension_Properties();
+            //        extension_iaasdiagnostics_properties.publisher = "Microsoft.Azure.Diagnostics";
+            //        extension_iaasdiagnostics_properties.type = "IaaSDiagnostics";
+            //        extension_iaasdiagnostics_properties.typeHandlerVersion = "1.5";
+            //        extension_iaasdiagnostics_properties.autoUpgradeMinorVersion = true;
+            //        extension_iaasdiagnostics_properties.settings = new Dictionary<string, string>();
+            //        extension_iaasdiagnostics_properties.settings.Add("xmlCfg", "[base64('" + xmlcfgvalue + "')]");
+            //        extension_iaasdiagnostics_properties.settings.Add("storageAccount", diagnosticsstorageaccount);
+            //        extension_iaasdiagnostics.properties = new Extension_Properties();
+            //        extension_iaasdiagnostics.properties = extension_iaasdiagnostics_properties;
+            //    }
+            //}
+
+            // Availability Set
             string availabilitysetname = virtualmachineinfo["cloudservicename"] + "-defaultAS";
             if (resource.SelectSingleNode("//AvailabilitySetName") != null)
             {
                 availabilitysetname = resource.SelectSingleNode("//AvailabilitySetName").InnerText;
+            }
+            else
+            {
+                _messages.Add($"VM '{virtualmachinename}' is not in an availability set. Putting it in a new availability set '{availabilitysetname}'.");
             }
 
             Reference availabilityset = new Reference();
@@ -1283,6 +1442,8 @@ namespace MIGAZ.Generator
             virtualmachine.location = virtualmachineinfo["location"].ToString();
             virtualmachine.properties = virtualmachine_properties;
             virtualmachine.dependsOn = dependson;
+            virtualmachine.resources = new List<Resource>();
+            if (extension_iaasdiagnostics != null) { virtualmachine.resources.Add(extension_iaasdiagnostics); }
 
             _processedItems.Add("Microsoft.Compute/virtualMachines/" + virtualmachine.name, virtualmachine.location);
             _resources.Add(virtualmachine);
@@ -1299,8 +1460,9 @@ namespace MIGAZ.Generator
             storageaccount_properties.accountType = resource.SelectSingleNode("//StorageServiceProperties/AccountType").InnerText;
 
             StorageAccount storageaccount = new StorageAccount();
-            storageaccount.name = resource.SelectSingleNode("//ServiceName").InnerText + app.Default.UniquenessSuffix;
-            storageaccount.location = resource.SelectSingleNode("//StorageServiceProperties/Location").InnerText;
+            //storageaccount.name = resource.SelectSingleNode("//ServiceName").InnerText + _settingsProvider.UniquenessSuffix;
+            storageaccount.name = GetNewStorageAccountName( resource.SelectSingleNode("//ServiceName").InnerText );
+            storageaccount.location = resource.SelectSingleNode("//ExtendedProperties/ExtendedProperty[Name='ResourceLocation']/Value").InnerText;
             storageaccount.properties = storageaccount_properties;
 
             _processedItems.Add("Microsoft.Storage/storageAccounts/" + storageaccount.name, storageaccount.location);
@@ -1344,7 +1506,41 @@ namespace MIGAZ.Generator
             return hexres.ToArray();
         }
 
+        public static string Base64Decode(string base64EncodedData)
+        {
+            byte[] base64EncodedBytes = System.Convert.FromBase64String(base64EncodedData);
+            return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
+        }
 
+        public static string Base64Encode(string plainText)
+        {
+            byte[] plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
+            return System.Convert.ToBase64String(plainTextBytes);
+        }
+
+        private string GetNewStorageAccountName(string oldStorageAccountName)
+        {
+            string newStorageAccountName = "";
+
+            if (_storageAccountNames.ContainsKey(oldStorageAccountName))
+            {
+                _storageAccountNames.TryGetValue(oldStorageAccountName, out newStorageAccountName);
+            }
+            else
+            {
+                newStorageAccountName = oldStorageAccountName + _settingsProvider.UniquenessSuffix;
+
+                if (newStorageAccountName.Length > 24)
+                {
+                    string randomString = Guid.NewGuid().ToString("N").Substring(0, 4);
+                    newStorageAccountName = newStorageAccountName.Substring(0, (24 - randomString.Length - _settingsProvider.UniquenessSuffix.Length)) + randomString + _settingsProvider.UniquenessSuffix;
+                }
+
+                _storageAccountNames.Add(oldStorageAccountName, newStorageAccountName);
+            }
+
+            return newStorageAccountName;
+        }
 
         private string GetVMSize(string vmsize)
         {

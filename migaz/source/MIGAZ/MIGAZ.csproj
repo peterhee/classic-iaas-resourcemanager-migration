@@ -95,12 +95,23 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>app.settings</DependentUpon>
     </Compile>
+    <Compile Include="Forms\ExportResults.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\ExportResults.Designer.cs">
+      <DependentUpon>ExportResults.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Generator\AppSettingsProvider.cs" />
     <Compile Include="Generator\AsmRetriever.cs" />
     <Compile Include="Generator\CloudTelemetryProvider.cs" />
     <Compile Include="Generator\InteractiveTokenProvider.cs" />
+    <Compile Include="Generator\ISaveSelectionProvider.cs" />
+    <Compile Include="Generator\ISettingsProvider.cs" />
     <Compile Include="Generator\ITelemetryProvider.cs" />
     <Compile Include="Generator\ITokenProvider.cs" />
     <Compile Include="Generator\ServiceUrls.cs" />
+    <Compile Include="Generator\UISaveSelectionProvider.cs" />
+    <Compile Include="Generator\VMDetails.cs" />
     <Compile Include="Models\CopyBlobDetail.cs" />
     <Compile Include="Models\ARM.cs" />
     <Compile Include="Forms\Options.cs">
@@ -122,9 +133,13 @@
     <Compile Include="Generator\IStatusProvider.cs" />
     <Compile Include="Generator\TemplateGenerator.cs" />
     <Compile Include="Generator\UIStatusProvider.cs" />
+    <Compile Include="Models\SaveSelection.cs" />
     <Compile Include="Models\TelemetryRecord.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Forms\ExportResults.resx">
+      <DependentUpon>ExportResults.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Forms\Options.resx">
       <DependentUpon>Options.cs</DependentUpon>
     </EmbeddedResource>
@@ -174,7 +189,9 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="DeployDocTemplate.html" />
     <Content Include="Images\Azure SDK.ico" />
+    <None Include="Resources\Resource group.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

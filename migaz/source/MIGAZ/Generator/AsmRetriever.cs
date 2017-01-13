@@ -16,15 +16,16 @@ namespace MIGAZ.Generator
     {
         private ILogProvider _logProvider;
         private IStatusProvider _statusProvider;
+        private object _lockObject = new object();
 
-        private Dictionary<string, XmlDocument> _documentCache = new Dictionary<string, XmlDocument>();
+        public Dictionary<string, XmlDocument> _documentCache = new Dictionary<string, XmlDocument>();
 
         public AsmRetriever(ILogProvider logProvider, IStatusProvider statusProvider)
         {
             _logProvider = logProvider;
             _statusProvider = statusProvider;
         }
-        public virtual XmlDocument GetAzureASMResources(string resourceType, string subscriptionId, Hashtable info, string token)
+        public virtual async Task<XmlDocument> GetAzureASMResources(string resourceType, string subscriptionId, Hashtable info, string token)
         {
             _logProvider.WriteLog("GetAzureASMResources", "Start");
 
@@ -94,12 +95,23 @@ namespace MIGAZ.Generator
                 case "VMImages":
                     url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/images";
                     break;
+                case "ReservedIPs":
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/services/networking/reservedips";
+                    break;
+                case "AffinityGroup":
+                    url = ServiceUrls.GetServiceManagementUrl(app.Default.AzureEnvironment) + subscriptionId + "/affinitygroups/" + info["affinitygroupname"];
+                    break;
             }
 
             Application.DoEvents();
 
+            _logProvider.WriteLog("GetAzureASMResources", "GET " + url);
+
             if (_documentCache.ContainsKey(url))
             {
+                _logProvider.WriteLog("GetAzureASMResources", "FROM XML CACHE");
+                _logProvider.WriteLog("GetAzureASMResources", "End");
+                writeXMLtoFile(url, "Cached");
                 return _documentCache[url];
             }
 
@@ -108,19 +120,20 @@ namespace MIGAZ.Generator
             request.Headers.Add("x-ms-version", "2015-04-01");
             request.Method = "GET";
 
-            _logProvider.WriteLog("GetAzureASMResources", "GET " + url);
 
             string xml = "";
             try
             {
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                HttpWebResponse response = (HttpWebResponse) await request.GetResponseAsync();
                 xml = new StreamReader(response.GetResponseStream()).ReadToEnd();
                 _logProvider.WriteLog("GetAzureASMResources", "RESPONSE " + response.StatusCode);
             }
             catch (Exception exception)
             {
                 _logProvider.WriteLog("GetAzureASMResources", "EXCEPTION " + exception.Message);
+                DialogResult dialogresult = MessageBox.Show(exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 xml = "";
+                //Application.ExitThread();
             }
 
             if (xml != "")
@@ -166,33 +179,37 @@ namespace MIGAZ.Generator
 
         private void writeXMLtoFile(string url, string xml)
         {
-            string logfilepath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\MIGAZ\\MIGAZ-XML-" + string.Format("{0:yyyyMMdd}", DateTime.Now) + ".log";
-            string text = DateTime.Now.ToString() + "   " + url + Environment.NewLine;
-            File.AppendAllText(logfilepath, text);
-            text = xml + Environment.NewLine;
-            File.AppendAllText(logfilepath, text);
-            text = Environment.NewLine;
-            File.AppendAllText(logfilepath, text);
+            lock (_lockObject)
+            {
+                string logfilepath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\MIGAZ\\MIGAZ-XML-" + string.Format("{0:yyyyMMdd}", DateTime.Now) + ".log";
+                string text = DateTime.Now.ToString() + "   " + url + Environment.NewLine;
+                File.AppendAllText(logfilepath, text);
+                text = xml + Environment.NewLine;
+                File.AppendAllText(logfilepath, text);
+                text = Environment.NewLine;
+                File.AppendAllText(logfilepath, text);
+            }
         }
 
-        public virtual void GetVMDetails(string subscriptionId, string cloudServiceName, string virtualMachineName, string token, out string deploymentName, out string virtualNetworkName, out string loadBalancerName)
+        public virtual async Task<VMDetails> GetVMDetails(string subscriptionId, string cloudServiceName, string virtualMachineName, string token)
         {
             Hashtable cloudserviceinfo = new Hashtable();
             cloudserviceinfo.Add("name", cloudServiceName);
+            VMDetails vmDetails = new VMDetails();
 
-            XmlDocument hostedservice = GetAzureASMResources("CloudService", subscriptionId, cloudserviceinfo, token);
+            XmlDocument hostedservice = await GetAzureASMResources("CloudService", subscriptionId, cloudserviceinfo, token);
             if (hostedservice.SelectNodes("//Deployments/Deployment").Count > 0)
             {
                 if (hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectNodes("RoleType").Count > 0)
                 {
                     if (hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectNodes("RoleList/Role")[0].SelectSingleNode("RoleType").InnerText == "PersistentVMRole")
                     {
-                        virtualNetworkName = "empty";
+                        vmDetails.VirtualNetworkName = "empty";
                         if (hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectSingleNode("VirtualNetworkName") != null)
                         {
-                            virtualNetworkName = hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectSingleNode("VirtualNetworkName").InnerText;
+                            vmDetails.VirtualNetworkName = hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectSingleNode("VirtualNetworkName").InnerText;
                         }
-                        deploymentName = hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectSingleNode("Name").InnerText;
+                        vmDetails.DeploymentName = hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectSingleNode("Name").InnerText;
                         XmlNodeList roles = hostedservice.SelectNodes("//Deployments/Deployment")[0].SelectNodes("RoleList/Role");
                         // GetVMLBMapping is necessary because a Cloud Service can have multiple availability sets
                         // On ARM, a load balancer can only be attached to 1 availability set
@@ -204,8 +221,8 @@ namespace MIGAZ.Generator
                             string currentVM = role.SelectSingleNode("RoleName").InnerText;
                             if (currentVM == virtualMachineName)
                             {
-                                loadBalancerName = vmlbmapping[virtualMachineName];
-                                return;
+                                vmDetails.LoadBalancerName = vmlbmapping[virtualMachineName];
+                                return vmDetails;
                             }
                         }
                     }

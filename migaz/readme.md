@@ -70,20 +70,12 @@ The tool uses Service Management REST API calls to gather all the details on Net
 
 <br>
 
-> migAz is not supported by Microsoft Support. Therefore, it is open sourced on Github and we're happy to accept pull requests for fixes or additional features.
+> migAz is not supported by Microsoft Support, but for the critical steps uses two powershell cmdlets that are fully supported: New-AzureRmResourceGroupDeployment and Start-AzureStorageBlobCopy. It is open sourced on Github and we're happy to accept pull requests for fixes or additional features.
 
 <br>
 
 ## Get it
-You can either get the tool by downloading the latest zip file from release folder or clone the repo using the either of the commands below
-
-
-    git clone https://github.com/Azure/classic-iaas-resourcemanager-migration.git
-
-or
-
-    git clone git@github.com:Azure/classic-iaas-resourcemanager-migration.git
-
+Download the latest zip file from release folder
 
 ## How to use
 
@@ -112,7 +104,8 @@ Post successful authentication the Subscriptions will be loaded.
 
 **Step 5:** The Export Objects will then collect all the properties of selected resources and create a JSON Template and a blob details file in the Output Folder selected.
 
-**Step 6:** Once the export completes, start the deployment of the template using the cmdlet:
+**Step 6:** Once the export completes, click the "Next Steps" tab to generate a customized documentation page showing how to deploy
+the template to your Azure environment. Alternatively follow the instructions below to start the deployment of the template using the cmdlet:
 
 
     New-AzureRmResourceGroupDeployment -Name "<Deployment Name>" -ResourceGroupName "<Resource Group Name>" -TemplateFile "<full path of the export.JSON>" -Verbose
@@ -121,7 +114,7 @@ Post successful authentication the Subscriptions will be loaded.
 
 Execute steps 7 to 9 only if virtual machines were included on the export.
 
-**Step 7:** initiate and complete the blob copy the required OS disks and data disks using BlobCopy.PS1 script
+**Step 7:** initiate and complete the blob copy of the required OS disks and data disks using BlobCopy.PS1 script
 
 > BlobCopy.ps1 script creates temporary snapshots to copy the blobs. This means that it will be able to copy disks from running virtual machines. But, depending on the workload, it can be absolutely required to stop the virtual machine to guarantee data consistency. This is the case, for example, for virtual machines using multiple data disks to create stripped volumes (like storage spaces).
 
@@ -134,6 +127,10 @@ Execute steps 7 to 9 only if virtual machines were included on the export.
     .\BlobCopy.ps1 -ResourcegroupName "<Resource Group Name>" -DetailsFilePath "<Full Path of copyblobdetails.JSON>" -StartType MonitorBlobCopy
 
 > Always run above commands in sequence. The first, creates the snapshots and initiate the asynchronous copies. The second, will monitor the asynchronous copy status of each blob and clean the snapshots at the end.
+
+> Additional note: if you need to cancel the blobs copy jobs run this command
+
+    .\BlobCopy.ps1 -ResourcegroupName "<Resource Group Name>" -DetailsFilePath "<Full Path of copyblobdetails.JSON>" -StartType CancelBlobCopy
 
 **Step 8:** Once the BlobCopy is completed re-deploy the export.JSON template (step 7) since the VHD’s required for the virtual machines are available now.
 
@@ -150,6 +147,14 @@ When exporting storage accounts and cloud services, the tool appends to the reso
 ### Build empty environment
 
 If this option is selected, the selected virtual machines will be exported to export.json file as new virtual machines with empty data disks. By default, Windows virtual machines will be created using Windows Server 2012 R2 Datacenter SKU and Linux virtual machine will be created using Ubuntu Server 16.04.0-LTS SKU. You can change this by editing the export.json template and change the image references.
+
+### Auto select dependencies
+
+If this option is selected, when you select a Virtual Machine, any dependent Virtual Network and Storage Accounts are selected automatically.
+
+### Save selection
+
+If this option is selected, migAz will record the last selected resources per each subscription. When you reopen the tool, the same resources will be automatically selected.
 
 ### Allow telemetry collection
 
@@ -191,3 +196,48 @@ As the Storage Accounts supports a maximum of 24 characters in the name, and the
 ### Troubleshooting
 The detailed logs and output of the REST API are captured in the location %USERPROFILE%\appdata\Local with the file name migAz-&lt;YYYYMMDD&gt;.log and migAz-XML-&lt;YYYYMMDD&gt;.log.
 In case of any issues during the deployment of the export.JSON you need to troubleshoot the template properties and fix the invalid entries. Report any issue on the tool site.
+
+
+## Release Notes
+### v1.4.9.0
+ - Performance improvements, minor fixes to generated resource names
+ 
+### v1.4.8.0
+ - Fix error when exporting a VM that is in a VNET with no subnets defined
+
+### v1.4.7.0
+ - New dialog after exporting template that generates instructions on how to deploy to ARM.
+
+### v1.4.6.0
+ - Support for VNETs attached to ExpressRoute circuts
+ - Fix unit tests
+
+### v1.4.5.0
+- Add Auto Select Dependencies option
+- Add Save Selection feature
+- Fix error when LoadBalancedEndpointSetName have spaces. Remove spaces
+- Correct behavior when new storage account name have more than 24 chars
+
+### v1.4.4.0
+- Add requirement for Azure.Storage and AzureRM.Storage modules to be 2.0.1
+- Add to BloblCopy.ps1 the option to cancel the blobs copy jobs
+- Remove clear screen command from BlobCopy.ps1 bor better results reading
+
+### v1.4.3.0
+- Add ability to export resources deployed on Affinity Groups
+- Prevent exception when VPN Gateway connection shared key is not defined
+
+### v1.4.2.1
+- . Fix reported issue when logging directory does not exist
+
+### v1.4.2.0
+- Process Cloud Services Reserved IPs to Static Public IPs
+- Add tool version and subscription offer categories to telemetry
+- Improvements on typical exceptions handling
+- Minor UI updates
+
+### v1.4.1.1
+- Correcting case where VM disk URL does not end with ".vhd". Not an usual situation, but possible.
+- Add logging when retrieving objects from xml cache
+- Correcting TabIndex for better usability
+- Resetting xml cache when re-login
